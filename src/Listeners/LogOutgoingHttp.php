@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\File\File;
 use HttpBeacon\Beacon;
 use HttpBeacon\Models\OutgoingRequest;
 use HttpBeacon\RequestCollector;
@@ -131,18 +132,50 @@ class LogOutgoingHttp
 
     private function payload(Request $request): array|string
     {
-        if ($request->isMultipart()) {
-            return collect($request->data())
-                ->mapWithKeys(fn ($part) => [$part['name'] => '<multipart>'])
-                ->all();
+        if (! $request->isMultipart()) {
+            return Redactor::parameters($request->data());
         }
 
-        return Redactor::parameters($request->data());
+        $extracted = collect($request->data())->mapWithKeys(function ($part) {
+            if ($part['contents'] instanceof File) {
+                $value = [
+                    'name' => $part['filename'] ?? $part['contents']->getClientOriginalName(),
+                    'size' => ($part['contents']->getSize() / 1000).'KB',
+                    'headers' => $part['headers'] ?? [],
+                ];
+            } elseif (is_resource($part['contents'])) {
+                $filesize = @filesize(stream_get_meta_data($part['contents'])['uri']);
+                $value = [
+                    'name' => $part['filename'] ?? null,
+                    'size' => $filesize ? ($filesize / 1000).'KB' : null,
+                    'headers' => $part['headers'] ?? [],
+                ];
+            } elseif (json_encode($part['contents']) === false) {
+                $value = [
+                    'name' => $part['filename'] ?? null,
+                    'size' => (strlen($part['contents']) / 1000).'KB',
+                    'headers' => $part['headers'] ?? [],
+                ];
+            } else {
+                $value = $part['contents'];
+            }
+
+            return [$part['name'] => $value];
+        })->toArray();
+
+        return Redactor::parameters($extracted);
     }
 
     private function responseBody(Response $response): mixed
     {
+        $stream = $response->toPsrResponse()->getBody();
+
+        if (! $stream->isSeekable()) {
+            return 'Streamed Response';
+        }
+
         $content = $response->body();
+        $stream->rewind();
 
         if ($content === '') {
             return 'Empty Response';
