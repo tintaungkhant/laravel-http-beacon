@@ -39,10 +39,6 @@ class BeaconServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'beacon-migrations');
 
-        $this->publishes([
-            __DIR__.'/../public' => public_path('vendor/beacon'),
-        ], 'beacon-assets');
-
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,

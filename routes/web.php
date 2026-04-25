@@ -1,5 +1,6 @@
 <?php
 
+use HttpBeacon\Http\Controllers\AssetController;
 use HttpBeacon\Http\Controllers\DashboardController;
 use HttpBeacon\Http\Controllers\IncomingRequestController;
 use HttpBeacon\Http\Controllers\OutgoingRequestController;
@@ -9,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware((array) config('beacon.middleware', ['web']))
     ->prefix('beacon')
     ->group(function () {
+        Route::get('assets/{path}', [AssetController::class, 'serve'])
+            ->where('path', '[A-Za-z0-9._/-]+\.(css|js|map)')
+            ->name('beacon.asset');
+
         Route::prefix('api')->group(function () {
             Route::get('dashboard', [DashboardController::class, 'index']);
 

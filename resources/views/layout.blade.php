@@ -8,11 +8,13 @@
 
     <title>Beacon{{ config('app.name') ? ' — ' . config('app.name') : '' }}</title>
 
-    <link rel="stylesheet" href="{{ asset('vendor/beacon/build/app.css') }}">
+    @php($beaconAssetVersion = \HttpBeacon\Beacon::assetVersion())
+
+    <link rel="stylesheet" href="{{ url('beacon/assets/app.css') }}?v={{ $beaconAssetVersion }}">
 </head>
 <body>
     <div id="beacon"></div>
 
-    <script type="module" src="{{ asset('vendor/beacon/build/app.js') }}"></script>
+    <script type="module" src="{{ url('beacon/assets/app.js') }}?v={{ $beaconAssetVersion }}"></script>
 </body>
 </html>

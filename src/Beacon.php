@@ -24,4 +24,16 @@ class Beacon
     {
         Cache::forget(self::PAUSE_KEY);
     }
+
+    /**
+     * Cache-busting tag for the compiled UI bundle. Re-derives from the
+     * file's mtime so any `composer update` that ships a new build
+     * automatically invalidates the browser cache.
+     */
+    public static function assetVersion(): string
+    {
+        $manifest = dirname(__DIR__).'/public/build/app.js';
+
+        return file_exists($manifest) ? (string) filemtime($manifest) : '0';
+    }
 }
