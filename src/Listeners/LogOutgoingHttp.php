@@ -12,7 +12,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
 use Psr\Http\Message\StreamInterface;
-use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class LogOutgoingHttp
 {
@@ -59,17 +59,11 @@ class LogOutgoingHttp
         ]);
     }
 
-    private function errorDetails(ConnectionFailed $event): ?array
+    private function errorDetails(ConnectionFailed $event): array
     {
-        $exception = $event->exception ?? null;
-
-        if (! $exception) {
-            return null;
-        }
-
         return [
-            'class' => $exception::class,
-            'message' => $exception->getMessage(),
+            'class' => $event->exception::class,
+            'message' => $event->exception->getMessage(),
         ];
     }
 
@@ -140,7 +134,7 @@ class LogOutgoingHttp
         }
 
         $extracted = collect($request->data())->mapWithKeys(function ($part) {
-            if ($part['contents'] instanceof File) {
+            if ($part['contents'] instanceof UploadedFile) {
                 $value = [
                     'name' => $part['filename'] ?? $part['contents']->getClientOriginalName(),
                     'size' => ($part['contents']->getSize() / 1000).'KB',
@@ -181,7 +175,7 @@ class LogOutgoingHttp
             return 'Redirected to '.$response->header('Location');
         }
 
-        $contentType = strtolower($response->header('Content-Type') ?? '');
+        $contentType = strtolower($response->header('Content-Type'));
 
         if ($this->isBinaryContentType($contentType)) {
             return 'Binary or non-text response';
@@ -189,8 +183,8 @@ class LogOutgoingHttp
 
         $limit = $this->bodySizeLimitBytes();
 
-        $declared = $response->header('Content-Length');
-        if ($limit > 0 && $declared !== null && (int) $declared > $limit) {
+        $declared = (int) $response->header('Content-Length');
+        if ($limit > 0 && $declared > $limit) {
             return 'Truncated';
         }
 

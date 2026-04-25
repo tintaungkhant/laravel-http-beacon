@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - config
+        - database
+        - src
+
+    level: 5
+
+    ignoreErrors:
+        # Package config files are merged + cached the same way consumer
+        # config files are; env() works correctly here.
+        -
+            identifier: larastan.noEnvCallsOutsideOfConfig
+            path: config/*.php

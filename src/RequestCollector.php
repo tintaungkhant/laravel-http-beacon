@@ -207,9 +207,9 @@ class RequestCollector
     private function quoteString(QueryExecuted $event, string $value): string
     {
         try {
-            $pdo = $event->connection->getPdo();
-            if ($pdo instanceof \PDO) {
-                return $pdo->quote($value);
+            $quoted = $event->connection->getPdo()->quote($value);
+            if ($quoted !== false) {
+                return $quoted;
             }
         } catch (\Throwable $e) {
             // PDO unavailable — fall through to manual escape
