@@ -27,6 +27,7 @@ class LogIncomingHttp
 
         try {
             IncomingRequest::create([
+                'request_uuid' => $this->collector->getRequestUuid(),
                 'hostname' => $event->request->getHost(),
                 'method' => $event->request->method(),
                 'controller_action' => $event->request->route()?->getActionName(),
@@ -44,6 +45,8 @@ class LogIncomingHttp
                 'models' => $collected['models'],
                 'jobs' => $collected['jobs'],
             ]);
+        } catch (\Throwable $e) {
+            report($e);
         } finally {
             $this->collector->resume();
         }

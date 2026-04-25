@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('beacon_incoming_requests', function (Blueprint $table) {
             $table->id();
+            $table->string('request_uuid', 36)->nullable()->index();
             $table->string('hostname')->index();
             $table->string('method', 10)->index();
             $table->string('controller_action', 500)->nullable();

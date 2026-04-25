@@ -21,6 +21,21 @@ class RequestCollector
 
     private ?array $modelActionPatterns = null;
 
+    private ?string $requestUuid = null;
+
+    public function getRequestUuid(): ?string
+    {
+        if (app()->runningInConsole()) {
+            return null;
+        }
+
+        if ($this->requestUuid === null) {
+            $this->requestUuid = (string) Str::uuid();
+        }
+
+        return $this->requestUuid;
+    }
+
     public function recordQuery(QueryExecuted $event): void
     {
         if ($this->pauseDepth > 0) {
@@ -108,6 +123,7 @@ class RequestCollector
         $this->models = [];
         $this->jobs = [];
         $this->pauseDepth = 0;
+        $this->requestUuid = null;
 
         return $data;
     }

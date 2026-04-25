@@ -22,6 +22,7 @@ class LogOutgoingHttp
         }
 
         $this->persist([
+            'request_uuid' => $this->collector->getRequestUuid(),
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
             'uri' => $event->request->url(),
@@ -42,13 +43,29 @@ class LogOutgoingHttp
         }
 
         $this->persist([
+            'request_uuid' => $this->collector->getRequestUuid(),
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
             'uri' => $event->request->url(),
             'payload' => $this->payload($event->request),
             'request_headers' => Redactor::headers($event->request->headers()),
+            'error' => $this->errorDetails($event),
             'failed' => true,
         ]);
+    }
+
+    private function errorDetails(ConnectionFailed $event): ?array
+    {
+        $exception = $event->exception ?? null;
+
+        if (! $exception) {
+            return null;
+        }
+
+        return [
+            'class' => $exception::class,
+            'message' => $exception->getMessage(),
+        ];
     }
 
     private function shouldRecord(Request $request): bool
@@ -84,6 +101,8 @@ class LogOutgoingHttp
 
         try {
             OutgoingRequest::create($attributes);
+        } catch (\Throwable $e) {
+            report($e);
         } finally {
             $this->collector->resume();
         }

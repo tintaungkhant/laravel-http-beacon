@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('beacon_outgoing_requests', function (Blueprint $table) {
             $table->id();
+            $table->string('request_uuid', 36)->nullable()->index();
             $table->string('hostname')->index();
             $table->string('method', 10)->index();
             $table->text('uri');
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->json('request_headers');
             $table->json('response')->nullable();
             $table->json('response_headers')->nullable();
+            $table->json('error')->nullable();
             $table->boolean('failed')->default(false)->index();
             $table->timestamp('created_at')->useCurrent()->index();
         });

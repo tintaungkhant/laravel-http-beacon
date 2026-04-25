@@ -22,6 +22,7 @@ class OutgoingRequest extends Model
         'request_headers' => 'array',
         'response' => 'array',
         'response_headers' => 'array',
+        'error' => 'array',
         'failed' => 'boolean',
         'duration_ms' => 'integer',
         'status' => 'integer',
