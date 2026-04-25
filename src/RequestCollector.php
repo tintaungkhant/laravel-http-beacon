@@ -2,12 +2,12 @@
 
 namespace HttpBeacon;
 
+use HttpBeacon\Support\Redactor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Str;
 use ReflectionObject;
-use ReflectionProperty;
 
 class RequestCollector
 {
@@ -66,22 +66,14 @@ class RequestCollector
             return;
         }
 
-        $class = $model::class;
-        $id = $model->getKey();
-        $key = $class.':'.($id ?? '_new');
         $action = $this->extractAction($event);
 
-        if (! isset($this->models[$key])) {
-            $this->models[$key] = [
-                'class' => $class,
-                'id' => $id,
-                'actions' => [],
-            ];
-        }
-
-        if (! in_array($action, $this->models[$key]['actions'], true)) {
-            $this->models[$key]['actions'][] = $action;
-        }
+        $this->models[] = [
+            'class' => $model::class,
+            'id' => $model->getKey(),
+            'action' => $action,
+            'changes' => $this->extractChanges($model, $action),
+        ];
     }
 
     public function recordJob(JobQueued $event): void
@@ -91,14 +83,29 @@ class RequestCollector
         }
 
         $job = $event->job;
-        $class = is_object($job) ? $job::class : (string) $job;
+        $isObject = is_object($job);
 
         $this->jobs[] = [
-            'class' => $class,
+            'class' => $isObject ? $job::class : (string) $job,
             'connection' => $event->connectionName,
             'queue' => $event->queue,
-            'payload' => is_object($job) ? $this->extractJobPayload($job) : null,
+            'payload' => $isObject ? $this->extractJobPayload($job) : null,
         ];
+    }
+
+    private function extractChanges(Model $model, string $action): ?array
+    {
+        if ($action === 'retrieved') {
+            return null;
+        }
+
+        $changes = $model->getChanges();
+
+        if (empty($changes)) {
+            return null;
+        }
+
+        return Redactor::parameters($changes);
     }
 
     public function pause(): void
@@ -147,16 +154,29 @@ class RequestCollector
         return $matches[1] ?? 'unknown';
     }
 
+    private const IGNORED_JOB_PROPERTIES = [
+        'connection', 'queue', 'delay', 'middleware', 'chained',
+        'chainConnection', 'chainQueue', 'chainCatchCallbacks',
+        'afterCommit', 'retryUntil',
+        'tries', 'timeout', 'maxExceptions', 'backoff', 'failOnTimeout',
+    ];
+
     private function extractJobPayload(object $command): array
     {
         $reflection = new ReflectionObject($command);
         $payload = [];
 
-        foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            $payload[$property->getName()] = $this->normalizeValue($property->getValue($command));
+        foreach ($reflection->getProperties() as $property) {
+            $name = $property->getName();
+
+            if (in_array($name, self::IGNORED_JOB_PROPERTIES, true)) {
+                continue;
+            }
+
+            $payload[$name] = $this->normalizeValue($property->getValue($command));
         }
 
-        return $payload;
+        return Redactor::parameters($payload);
     }
 
     private function normalizeValue(mixed $value): mixed

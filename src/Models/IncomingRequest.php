@@ -3,6 +3,7 @@
 namespace HttpBeacon\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class IncomingRequest extends Model
 {
@@ -24,11 +25,19 @@ class IncomingRequest extends Model
         'response' => 'array',
         'response_headers' => 'array',
         'queries' => 'array',
-        'models' => 'array',
-        'jobs' => 'array',
         'memory_mb' => 'float',
         'duration_ms' => 'integer',
         'status' => 'integer',
         'created_at' => 'datetime',
     ];
+
+    public function modelTouches(): HasMany
+    {
+        return $this->hasMany(ModelTouch::class, 'request_id');
+    }
+
+    public function jobDispatches(): HasMany
+    {
+        return $this->hasMany(JobDispatch::class, 'request_id');
+    }
 }

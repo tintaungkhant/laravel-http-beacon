@@ -25,14 +25,37 @@ return new class extends Migration
             $table->json('response')->nullable();
             $table->json('response_headers');
             $table->json('queries');
-            $table->json('models');
-            $table->json('jobs');
             $table->timestamp('created_at')->useCurrent()->index();
+        });
+
+        Schema::create('beacon_request_models', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('request_id')->constrained('beacon_incoming_requests')->cascadeOnDelete();
+            $table->string('model_class');
+            $table->string('model_id')->nullable();
+            $table->string('action');
+            $table->json('changes')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['model_class', 'created_at']);
+            $table->index(['action', 'created_at']);
+        });
+
+        Schema::create('beacon_request_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('request_id')->constrained('beacon_incoming_requests')->cascadeOnDelete();
+            $table->string('job_class');
+            $table->string('connection')->nullable();
+            $table->string('queue')->nullable();
+            $table->json('payload')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['job_class', 'created_at']);
         });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('beacon_request_jobs');
+        Schema::dropIfExists('beacon_request_models');
         Schema::dropIfExists('beacon_incoming_requests');
     }
 };

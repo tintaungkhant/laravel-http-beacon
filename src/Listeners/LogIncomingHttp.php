@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use HttpBeacon\Models\IncomingRequest;
+use HttpBeacon\Models\JobDispatch;
+use HttpBeacon\Models\ModelTouch;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Redactor;
 
@@ -26,7 +28,7 @@ class LogIncomingHttp
         $this->collector->pause();
 
         try {
-            IncomingRequest::create([
+            $incoming = IncomingRequest::create([
                 'request_uuid' => $this->collector->getRequestUuid(),
                 'hostname' => $event->request->getHost(),
                 'method' => $event->request->method(),
@@ -42,9 +44,15 @@ class LogIncomingHttp
                 'response' => $this->responseBody($event->response),
                 'response_headers' => Redactor::headers($event->response->headers->all()),
                 'queries' => $collected['queries'],
-                'models' => $collected['models'],
-                'jobs' => $collected['jobs'],
             ]);
+
+            if ($collected['models']) {
+                ModelTouch::insert($this->buildModelTouchRows($incoming->id, $collected['models']));
+            }
+
+            if ($collected['jobs']) {
+                JobDispatch::insert($this->buildJobDispatchRows($incoming->id, $collected['jobs']));
+            }
         } catch (\Throwable $e) {
             report($e);
         } finally {
@@ -93,6 +101,28 @@ class LogIncomingHttp
         }
 
         return round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+    }
+
+    private function buildModelTouchRows(int $requestId, array $models): array
+    {
+        return array_map(fn ($m) => [
+            'request_id' => $requestId,
+            'model_class' => $m['class'],
+            'model_id' => $m['id'] !== null ? (string) $m['id'] : null,
+            'action' => $m['action'],
+            'changes' => $m['changes'] !== null ? json_encode($m['changes']) : null,
+        ], $models);
+    }
+
+    private function buildJobDispatchRows(int $requestId, array $jobs): array
+    {
+        return array_map(fn ($j) => [
+            'request_id' => $requestId,
+            'job_class' => $j['class'],
+            'connection' => $j['connection'] ?? null,
+            'queue' => $j['queue'] ?? null,
+            'payload' => $j['payload'] !== null ? json_encode($j['payload']) : null,
+        ], $jobs);
     }
 
     private function middlewares(Request $request): array
