@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { formatDateTime } from '../utils.js'
+import { formatDateTimeLocal, formatDateTimeUTC } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import JsonViewer from '../components/JsonViewer.vue'
@@ -88,7 +88,11 @@ onMounted(load)
                         </tr>
                         <tr>
                             <td class="px-4 py-2.5 text-slate-500">Time</td>
-                            <td class="px-4 py-2.5 text-slate-800">{{ formatDateTime(entry.created_at) }}</td>
+                            <td class="px-4 py-2.5 text-slate-800">{{ formatDateTimeLocal(entry.created_at) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2.5 text-slate-500">Time (UTC)</td>
+                            <td class="px-4 py-2.5 text-slate-800">{{ formatDateTimeUTC(entry.created_at) }}</td>
                         </tr>
                         <tr v-if="entry.request_uuid">
                             <td class="px-4 py-2.5 text-slate-500">UUID</td>

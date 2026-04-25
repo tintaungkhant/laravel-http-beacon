@@ -13,9 +13,38 @@ export function timeAgo(date) {
     return `${months}mo ago`
 }
 
-export function formatDateTime(date) {
+function pad2(n) {
+    return String(n).padStart(2, '0')
+}
+
+function formatYmdHms(d, utc = false) {
+    const year = utc ? d.getUTCFullYear() : d.getFullYear()
+    const month = utc ? d.getUTCMonth() : d.getMonth()
+    const day = utc ? d.getUTCDate() : d.getDate()
+    const hour = utc ? d.getUTCHours() : d.getHours()
+    const min = utc ? d.getUTCMinutes() : d.getMinutes()
+    const sec = utc ? d.getUTCSeconds() : d.getSeconds()
+    return `${year}-${pad2(month + 1)}-${pad2(day)} ${pad2(hour)}:${pad2(min)}:${pad2(sec)}`
+}
+
+function localTimezoneLabel() {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'
+    } catch {
+        return 'Local'
+    }
+}
+
+export function formatDateTimeLocal(date) {
     if (!date) return ''
-    return new Date(date).toLocaleString()
+    const d = new Date(date)
+    return `${formatYmdHms(d, false)} (${localTimezoneLabel()})`
+}
+
+export function formatDateTimeUTC(date) {
+    if (!date) return ''
+    const d = new Date(date)
+    return `${formatYmdHms(d, true)} (UTC)`
 }
 
 export function methodColor(method) {
