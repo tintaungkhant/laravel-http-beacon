@@ -20,9 +20,6 @@ class InstallCommand extends Command
         $this->comment('Publishing Beacon migrations...');
         $this->callSilent('vendor:publish', ['--tag' => 'beacon-migrations']);
 
-        $this->comment('Publishing Beacon assets...');
-        $this->callSilent('vendor:publish', ['--tag' => 'beacon-assets']);
-
         $this->info('Beacon installed successfully.');
 
         return self::SUCCESS;
