@@ -73,7 +73,10 @@ return [
     |
     | body_size_limit_kb: max payload/response size before "Truncated".
     |   Set to null or 0 to disable truncation.
+    | only_paths:  if non-empty, only paths matching one of these patterns
+    |              are recorded. Empty = no restriction. (Str::is)
     | ignore_paths: glob patterns matched against $request->path() (Str::is).
+    |              Applied after only_paths.
     | ignore_methods: HTTP methods to skip (case-insensitive).
     | ignore_status_codes: response status codes to skip.
     |
@@ -82,6 +85,9 @@ return [
     'incoming' => [
         'enabled' => true,
         'body_size_limit_kb' => 64,
+        'only_paths' => [
+            // 'api/*',
+        ],
         'ignore_paths' => [
             'beacon*',
             'horizon*',

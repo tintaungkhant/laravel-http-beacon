@@ -68,8 +68,14 @@ class LogIncomingHttp
     private function shouldRecord(RequestHandled $event): bool
     {
         $config = config('beacon.incoming');
+        $path = $event->request->path();
 
-        if (Str::is((array) ($config['ignore_paths'] ?? []), $event->request->path())) {
+        $only = (array) ($config['only_paths'] ?? []);
+        if (! empty($only) && ! Str::is($only, $path)) {
+            return false;
+        }
+
+        if (Str::is((array) ($config['ignore_paths'] ?? []), $path)) {
             return false;
         }
 
