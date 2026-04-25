@@ -5,6 +5,7 @@ namespace HttpBeacon\Listeners;
 use HttpBeacon\Beacon;
 use HttpBeacon\Models\OutgoingRequest;
 use HttpBeacon\RequestCollector;
+use HttpBeacon\Support\Caller;
 use HttpBeacon\Support\Redactor;
 use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
@@ -36,6 +37,7 @@ class LogOutgoingHttp
             'response' => $this->responseBody($event->response),
             'response_headers' => Redactor::headers($event->response->headers()),
             'failed' => false,
+            'caller_action' => Caller::find(),
             'created_at' => now(),
         ]);
     }
@@ -55,6 +57,7 @@ class LogOutgoingHttp
             'request_headers' => Redactor::headers($event->request->headers()),
             'error' => $this->errorDetails($event),
             'failed' => true,
+            'caller_action' => Caller::find(),
             'created_at' => now(),
         ]);
     }
