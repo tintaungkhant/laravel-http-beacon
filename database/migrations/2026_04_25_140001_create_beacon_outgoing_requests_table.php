@@ -30,6 +30,7 @@ return new class extends Migration
             $table->json('response_headers')->nullable();
             $table->json('error')->nullable();
             $table->boolean('failed')->default(false);
+            $table->string('caller_action', 500)->nullable();
             $table->dateTime('created_at');
 
             $table->index(['created_at', 'status']);

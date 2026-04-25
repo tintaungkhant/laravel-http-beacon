@@ -71,6 +71,10 @@ onMounted(load)
                             <td class="px-4 py-2.5 text-slate-800">{{ entry.duration_ms ?? '—' }} ms</td>
                         </tr>
                         <tr>
+                            <td class="px-4 py-2.5 text-slate-500">Caller</td>
+                            <td class="px-4 py-2.5 font-mono text-xs text-slate-800">{{ entry.caller_action || '—' }}</td>
+                        </tr>
+                        <tr>
                             <td class="px-4 py-2.5 text-slate-500">Time</td>
                             <td class="px-4 py-2.5 text-slate-800">{{ formatDateTimeLocal(entry.created_at) }}</td>
                         </tr>
