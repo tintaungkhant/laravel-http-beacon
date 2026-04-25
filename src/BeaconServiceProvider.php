@@ -39,6 +39,10 @@ class BeaconServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'beacon-migrations');
 
+        $this->publishes([
+            __DIR__.'/../public' => public_path('vendor/beacon'),
+        ], 'beacon-assets');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
@@ -54,6 +58,7 @@ class BeaconServiceProvider extends ServiceProvider
         }
 
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'beacon');
 
         $this->registerOutgoingListeners();
         $this->registerIncomingListeners();

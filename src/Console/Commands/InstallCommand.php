@@ -20,6 +20,9 @@ class InstallCommand extends Command
         $this->comment('Publishing Beacon migrations...');
         $this->callSilent('vendor:publish', ['--tag' => 'beacon-migrations']);
 
+        $this->comment('Publishing Beacon assets...');
+        $this->callSilent('vendor:publish', ['--tag' => 'beacon-assets']);
+
         $this->comment('Running migrations...');
         $this->call('migrate');
 
