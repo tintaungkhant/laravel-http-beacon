@@ -21,10 +21,22 @@
         "php": "^8.3",
         "illuminate/support": "^13.0"
     },
+    "require-dev": {
+        "orchestra/testbench": "^11.1",
+        "phpunit/phpunit": "^12.5"
+    },
     "autoload": {
         "psr-4": {
             "HttpBeacon\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HttpBeacon\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     },
     "extra": {
         "laravel": {
