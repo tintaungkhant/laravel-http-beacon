@@ -10,22 +10,25 @@ return new class extends Migration
     {
         Schema::create('beacon_incoming_requests', function (Blueprint $table) {
             $table->id();
-            $table->string('request_uuid', 36)->nullable()->index();
-            $table->string('hostname')->index();
-            $table->string('method', 10)->index();
+            $table->string('request_uuid', 36)->nullable();
+            $table->string('hostname');
+            $table->string('method', 10);
             $table->string('controller_action', 500)->nullable();
             $table->json('middlewares');
             $table->text('path');
-            $table->unsignedSmallInteger('status')->index();
-            $table->unsignedInteger('duration_ms')->nullable()->index();
+            $table->unsignedSmallInteger('status');
+            $table->unsignedInteger('duration_ms')->nullable();
             $table->decimal('memory_mb', 8, 2)->nullable();
-            $table->string('ip', 45)->nullable()->index();
+            $table->string('ip', 45)->nullable();
             $table->json('payload');
             $table->json('request_headers');
             $table->json('response')->nullable();
             $table->json('response_headers');
             $table->unsignedInteger('query_count')->default(0);
-            $table->dateTime('created_at')->index();
+            $table->dateTime('created_at');
+
+            $table->index(['created_at', 'status']);
+            $table->index(['created_at', 'duration_ms']);
         });
 
         Schema::create('beacon_request_models', function (Blueprint $table) {
@@ -37,8 +40,6 @@ return new class extends Migration
             $table->json('changes')->nullable();
             $table->string('caller', 500)->nullable();
             $table->dateTime('created_at');
-            $table->index(['model_class', 'created_at']);
-            $table->index(['action', 'created_at']);
         });
 
         Schema::create('beacon_request_jobs', function (Blueprint $table) {
@@ -50,7 +51,6 @@ return new class extends Migration
             $table->json('payload')->nullable();
             $table->string('caller', 500)->nullable();
             $table->dateTime('created_at');
-            $table->index(['job_class', 'created_at']);
         });
 
         Schema::create('beacon_request_queries', function (Blueprint $table) {
@@ -61,7 +61,7 @@ return new class extends Migration
             $table->text('sql');
             $table->json('bindings')->nullable();
             $table->text('sql_with_bindings');
-            $table->decimal('time_ms', 10, 2)->index();
+            $table->decimal('time_ms', 10, 2);
             $table->string('caller', 500)->nullable();
             $table->dateTime('created_at');
         });
