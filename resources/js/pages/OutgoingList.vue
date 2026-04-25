@@ -203,10 +203,6 @@ onMounted(() => {
                 <option value="4xx">4xx Client Error</option>
                 <option value="5xx">5xx Server Error</option>
             </select>
-            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-                <input v-model="filters.failed" type="checkbox" class="size-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
-                Failed only
-            </label>
             <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
                 From
                 <input
@@ -222,6 +218,10 @@ onMounted(() => {
                     type="datetime-local"
                     class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
+            </label>
+            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                <input v-model="filters.failed" type="checkbox" class="size-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                Failed only
             </label>
             <button
                 v-if="hasActiveFilters"

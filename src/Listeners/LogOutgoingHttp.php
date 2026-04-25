@@ -35,6 +35,7 @@ class LogOutgoingHttp
             'response' => $this->responseBody($event->response),
             'response_headers' => Redactor::headers($event->response->headers()),
             'failed' => false,
+            'created_at' => now(),
         ]);
     }
 
@@ -53,6 +54,7 @@ class LogOutgoingHttp
             'request_headers' => Redactor::headers($event->request->headers()),
             'error' => $this->errorDetails($event),
             'failed' => true,
+            'created_at' => now(),
         ]);
     }
 

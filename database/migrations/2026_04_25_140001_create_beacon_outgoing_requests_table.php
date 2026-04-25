@@ -22,7 +22,7 @@ return new class extends Migration
             $table->json('response_headers')->nullable();
             $table->json('error')->nullable();
             $table->boolean('failed')->default(false)->index();
-            $table->timestamp('created_at')->useCurrent()->index();
+            $table->dateTime('created_at')->index();
         });
     }
 

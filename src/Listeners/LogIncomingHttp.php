@@ -28,6 +28,7 @@ class LogIncomingHttp
         }
 
         $this->collector->pause();
+        $now = now();
 
         try {
             $incoming = IncomingRequest::create([
@@ -46,18 +47,19 @@ class LogIncomingHttp
                 'response' => $this->responseBody($event->response),
                 'response_headers' => Redactor::headers($event->response->headers->all()),
                 'query_count' => $collected['query_count'],
+                'created_at' => $now,
             ]);
 
             if ($collected['queries']) {
-                QueryRecord::insert($this->buildQueryRows($incoming->id, $collected['queries']));
+                QueryRecord::insert($this->buildQueryRows($incoming->id, $collected['queries'], $now));
             }
 
             if ($collected['models']) {
-                ModelTouch::insert($this->buildModelTouchRows($incoming->id, $collected['models']));
+                ModelTouch::insert($this->buildModelTouchRows($incoming->id, $collected['models'], $now));
             }
 
             if ($collected['jobs']) {
-                JobDispatch::insert($this->buildJobDispatchRows($incoming->id, $collected['jobs']));
+                JobDispatch::insert($this->buildJobDispatchRows($incoming->id, $collected['jobs'], $now));
             }
         } catch (\Throwable $e) {
             report($e);
@@ -119,7 +121,7 @@ class LogIncomingHttp
         return round(memory_get_peak_usage(true) / 1024 / 1024, 2);
     }
 
-    private function buildQueryRows(int $requestId, array $queries): array
+    private function buildQueryRows(int $requestId, array $queries, \DateTimeInterface $now): array
     {
         return array_map(fn ($q) => [
             'request_id' => $requestId,
@@ -130,6 +132,7 @@ class LogIncomingHttp
             'bindings' => ! empty($q['bindings']) ? json_encode($q['bindings']) : null,
             'time_ms' => $q['time_ms'],
             'caller' => $q['caller'] ?? null,
+            'created_at' => $now,
         ], $queries);
     }
 
@@ -141,7 +144,7 @@ class LogIncomingHttp
         return in_array($type, ['SELECT', 'INSERT', 'UPDATE', 'DELETE'], true) ? $type : 'OTHER';
     }
 
-    private function buildModelTouchRows(int $requestId, array $models): array
+    private function buildModelTouchRows(int $requestId, array $models, \DateTimeInterface $now): array
     {
         return array_map(fn ($m) => [
             'request_id' => $requestId,
@@ -150,10 +153,11 @@ class LogIncomingHttp
             'action' => $m['action'],
             'changes' => $m['changes'] !== null ? json_encode($m['changes']) : null,
             'caller' => $m['caller'] ?? null,
+            'created_at' => $now,
         ], $models);
     }
 
-    private function buildJobDispatchRows(int $requestId, array $jobs): array
+    private function buildJobDispatchRows(int $requestId, array $jobs, \DateTimeInterface $now): array
     {
         return array_map(fn ($j) => [
             'request_id' => $requestId,
@@ -162,6 +166,7 @@ class LogIncomingHttp
             'queue' => $j['queue'] ?? null,
             'payload' => $j['payload'] !== null ? json_encode($j['payload']) : null,
             'caller' => $j['caller'] ?? null,
+            'created_at' => $now,
         ], $jobs);
     }
 

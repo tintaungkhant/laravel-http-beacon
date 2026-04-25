@@ -25,7 +25,7 @@ return new class extends Migration
             $table->json('response')->nullable();
             $table->json('response_headers');
             $table->unsignedInteger('query_count')->default(0);
-            $table->timestamp('created_at')->useCurrent()->index();
+            $table->dateTime('created_at')->index();
         });
 
         Schema::create('beacon_request_models', function (Blueprint $table) {
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('action');
             $table->json('changes')->nullable();
             $table->string('caller', 500)->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->dateTime('created_at');
             $table->index(['model_class', 'created_at']);
             $table->index(['action', 'created_at']);
         });
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('queue')->nullable();
             $table->json('payload')->nullable();
             $table->string('caller', 500)->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->dateTime('created_at');
             $table->index(['job_class', 'created_at']);
         });
 
@@ -63,7 +63,7 @@ return new class extends Migration
             $table->text('sql_with_bindings');
             $table->decimal('time_ms', 10, 2)->index();
             $table->string('caller', 500)->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->dateTime('created_at');
         });
     }
 
