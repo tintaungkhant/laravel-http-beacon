@@ -7,7 +7,7 @@ It is intentionally narrower than [Laravel Telescope](https://github.com/laravel
 ## Why Beacon?
 
 - **HTTP-first.** No watchers for things you rarely need in production (mail, cache, redis, views, dumps, ...). Just requests in, requests out, and what they did.
-- **Filterable at scale.** Beacon stores queries, model touches, and job dispatches in normalized tables with composite indexes — designed to stay responsive at 100M rows.
+- **Filterable at scale.** Beacon stores queries, model touches, and job dispatches in normalized tables with composite indexes.
 - **Caller everywhere.** Each captured query, model event, and dispatched job is tagged with the user-code call site (e.g. `App\Services\UserService@updateUser:14`), not just queries.
 - **Modern stack.** Vue 3, Vite, Tailwind v4. Compiled assets ship with the package — no Node toolchain required in the consumer app.
 
@@ -179,33 +179,33 @@ vendor/bin/phpstan  # level 5 with larastan
 
 24-hour aggregation: incoming + outgoing volumes, failure counts, status breakdown, slowest endpoints (clickable through to detail).
 
-![Dashboard](docs/screenshoots/beacon-dashboard.png)
+Dashboard
 
 ### Incoming Requests
 
 List view with search, method, status range, date range, and clickable rows. Pause / resume / delete-all in the header.
 
-![Incoming Requests List](docs/screenshoots/beacon-in-list.png)
+Incoming Requests List
 
 ### Incoming Request Detail
 
 Full request payload, headers, response, plus the queries / models / jobs that ran during the request — each tagged with the user-code caller.
 
-![Incoming Request Detail — Attributes & Tabs](docs/screenshoots/beacon-in-detail-1.png)
+Incoming Request Detail — Attributes & Tabs
 
-![Incoming Request Detail — Queries / Models / Jobs](docs/screenshoots/beacon-in-detail-2.png)
+Incoming Request Detail — Queries / Models / Jobs
 
 ### Outgoing Requests
 
 List view with the `Failed only` toggle for connection errors.
 
-![Outgoing Requests List](docs/screenshoots/beacon-out-list.png)
+Outgoing Requests List
 
 ### Outgoing Request Detail
 
 URI, status, duration, request payload, response, and headers — same redaction rules as incoming.
 
-![Outgoing Request Detail](docs/screenshoots/beacon-out-detail-1.png)
+Outgoing Request Detail
 
 ## License
 
