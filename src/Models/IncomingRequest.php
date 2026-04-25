@@ -24,10 +24,10 @@ class IncomingRequest extends Model
         'request_headers' => 'array',
         'response' => 'array',
         'response_headers' => 'array',
-        'queries' => 'array',
         'memory_mb' => 'float',
         'duration_ms' => 'integer',
         'status' => 'integer',
+        'query_count' => 'integer',
         'created_at' => 'datetime',
     ];
 
@@ -39,5 +39,10 @@ class IncomingRequest extends Model
     public function jobDispatches(): HasMany
     {
         return $this->hasMany(JobDispatch::class, 'request_id');
+    }
+
+    public function queries(): HasMany
+    {
+        return $this->hasMany(QueryRecord::class, 'request_id');
     }
 }

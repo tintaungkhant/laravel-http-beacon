@@ -13,6 +13,8 @@ class RequestCollector
 {
     private array $queries = [];
 
+    private int $queryCount = 0;
+
     private array $models = [];
 
     private array $jobs = [];
@@ -42,8 +44,16 @@ class RequestCollector
             return;
         }
 
+        $this->queryCount++;
+
+        $cap = (int) config('beacon.collect.max_queries_per_request', 0);
+        if ($cap > 0 && count($this->queries) >= $cap) {
+            return;
+        }
+
         $this->queries[] = [
             'sql' => $event->sql,
+            'sql_with_bindings' => $this->replaceBindings($event),
             'bindings' => $event->bindings,
             'time_ms' => $event->time,
             'connection' => $event->connectionName,
@@ -122,11 +132,13 @@ class RequestCollector
     {
         $data = [
             'queries' => $this->queries,
+            'query_count' => $this->queryCount,
             'models' => array_values($this->models),
             'jobs' => $this->jobs,
         ];
 
         $this->queries = [];
+        $this->queryCount = 0;
         $this->models = [];
         $this->jobs = [];
         $this->pauseDepth = 0;
@@ -152,6 +164,54 @@ class RequestCollector
         preg_match('/^eloquent\.([^:]+):/', $event, $matches);
 
         return $matches[1] ?? 'unknown';
+    }
+
+    private function replaceBindings(QueryExecuted $event): string
+    {
+        $sql = $event->sql;
+
+        if (empty($event->bindings)) {
+            return $sql;
+        }
+
+        $bindings = $event->connection->prepareBindings($event->bindings);
+
+        foreach ($bindings as $key => $binding) {
+            $regex = is_numeric($key)
+                ? "/\?(?=(?:[^'\\\']*'[^'\\\']*')*[^'\\\']*$)/"
+                : "/:{$key}(?=(?:[^'\\\']*'[^'\\\']*')*[^'\\\']*$)/";
+
+            if ($binding === null) {
+                $value = 'null';
+            } elseif (is_int($binding) || is_float($binding)) {
+                $value = (string) $binding;
+            } else {
+                $value = $this->quoteString($event, (string) $binding);
+            }
+
+            $sql = preg_replace_callback(
+                $regex,
+                fn () => $value,
+                $sql,
+                is_numeric($key) ? 1 : -1
+            );
+        }
+
+        return $sql;
+    }
+
+    private function quoteString(QueryExecuted $event, string $value): string
+    {
+        try {
+            $pdo = $event->connection->getPdo();
+            if ($pdo instanceof \PDO) {
+                return $pdo->quote($value);
+            }
+        } catch (\Throwable $e) {
+            // PDO unavailable — fall through to manual escape
+        }
+
+        return "'".strtr($value, ["'" => "''", '\\' => '\\\\'])."'";
     }
 
     private const IGNORED_JOB_PROPERTIES = [

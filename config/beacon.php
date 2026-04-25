@@ -123,6 +123,7 @@ return [
         'jobs' => true,
         'memory' => true,
         'model_actions' => ['created', 'updated', 'deleted', 'restored', 'retrieved'],
+        'max_queries_per_request' => null, // null or 0 = unlimited
     ],
 
 ];

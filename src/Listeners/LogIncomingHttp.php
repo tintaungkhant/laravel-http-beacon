@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\JobDispatch;
 use HttpBeacon\Models\ModelTouch;
+use HttpBeacon\Models\QueryRecord;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Redactor;
 
@@ -43,8 +44,12 @@ class LogIncomingHttp
                 'request_headers' => Redactor::headers($event->request->headers->all()),
                 'response' => $this->responseBody($event->response),
                 'response_headers' => Redactor::headers($event->response->headers->all()),
-                'queries' => $collected['queries'],
+                'query_count' => $collected['query_count'],
             ]);
+
+            if ($collected['queries']) {
+                QueryRecord::insert($this->buildQueryRows($incoming->id, $collected['queries']));
+            }
 
             if ($collected['models']) {
                 ModelTouch::insert($this->buildModelTouchRows($incoming->id, $collected['models']));
@@ -101,6 +106,32 @@ class LogIncomingHttp
         }
 
         return round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+    }
+
+    private function buildQueryRows(int $requestId, array $queries): array
+    {
+        $signatures = array_map(fn ($q) => md5($q['sql']), $queries);
+        $occurrences = array_count_values($signatures);
+
+        return array_map(fn ($q, $signature) => [
+            'request_id' => $requestId,
+            'connection' => $q['connection'],
+            'type' => $this->extractQueryType($q['sql']),
+            'sql' => $q['sql'],
+            'sql_with_bindings' => $q['sql_with_bindings'],
+            'sql_signature' => $signature,
+            'bindings' => ! empty($q['bindings']) ? json_encode($q['bindings']) : null,
+            'time_ms' => $q['time_ms'],
+            'occurrences' => $occurrences[$signature],
+        ], $queries, $signatures);
+    }
+
+    private function extractQueryType(string $sql): string
+    {
+        preg_match('/^\s*(\w+)/i', $sql, $matches);
+        $type = strtoupper($matches[1] ?? '');
+
+        return in_array($type, ['SELECT', 'INSERT', 'UPDATE', 'DELETE'], true) ? $type : 'OTHER';
     }
 
     private function buildModelTouchRows(int $requestId, array $models): array

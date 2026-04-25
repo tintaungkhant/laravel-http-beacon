@@ -24,7 +24,7 @@ return new class extends Migration
             $table->json('request_headers');
             $table->json('response')->nullable();
             $table->json('response_headers');
-            $table->json('queries');
+            $table->unsignedInteger('query_count')->default(0);
             $table->timestamp('created_at')->useCurrent()->index();
         });
 
@@ -50,10 +50,26 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
             $table->index(['job_class', 'created_at']);
         });
+
+        Schema::create('beacon_request_queries', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('request_id')->constrained('beacon_incoming_requests')->cascadeOnDelete();
+            $table->string('connection')->nullable();
+            $table->string('type', 10);
+            $table->char('sql_signature', 32);
+            $table->text('sql');
+            $table->json('bindings')->nullable();
+            $table->text('sql_with_bindings');
+            $table->decimal('time_ms', 10, 2)->index();
+            $table->unsignedInteger('occurrences')->default(1);
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['sql_signature', 'created_at']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('beacon_request_queries');
         Schema::dropIfExists('beacon_request_jobs');
         Schema::dropIfExists('beacon_request_models');
         Schema::dropIfExists('beacon_incoming_requests');
