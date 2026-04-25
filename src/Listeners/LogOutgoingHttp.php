@@ -11,8 +11,6 @@ use Illuminate\Support\Str;
 
 class LogOutgoingHttp
 {
-    private const BODY_SIZE_LIMIT_KB = 64;
-
     public function handleResponse(ResponseReceived $event): void
     {
         Log::info('[traffic-monitor] outgoing http', [
@@ -114,6 +112,12 @@ class LogOutgoingHttp
 
     private function exceedsLimit(string $content): bool
     {
-        return mb_strlen($content) / 1000 > self::BODY_SIZE_LIMIT_KB;
+        $limit = config('traffic-monitor.body_size_limit_kb');
+
+        if ($limit === null || $limit === 0) {
+            return false;
+        }
+
+        return mb_strlen($content) / 1000 > $limit;
     }
 }

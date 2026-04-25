@@ -12,12 +12,16 @@ class TrafficMonitorServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->mergeConfigFrom(__DIR__.'/../config/traffic-monitor.php', 'traffic-monitor');
     }
 
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        $this->publishes([
+            __DIR__.'/../config/traffic-monitor.php' => config_path('traffic-monitor.php'),
+        ], 'traffic-monitor-config');
 
         Event::listen(ResponseReceived::class, [LogOutgoingHttp::class, 'handleResponse']);
         Event::listen(ConnectionFailed::class, [LogOutgoingHttp::class, 'handleFailure']);
