@@ -2,9 +2,14 @@
 
 namespace Tintaungkhant\TrafficMonitor;
 
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Tintaungkhant\TrafficMonitor\Listeners\LogIncomingHttp;
@@ -15,6 +20,8 @@ class TrafficMonitorServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/traffic-monitor.php', 'traffic-monitor');
+
+        $this->app->singleton(RequestCollector::class);
     }
 
     public function boot(): void
@@ -29,5 +36,16 @@ class TrafficMonitorServiceProvider extends ServiceProvider
         Event::listen(ConnectionFailed::class, [LogOutgoingHttp::class, 'handleFailure']);
 
         Event::listen(RequestHandled::class, [LogIncomingHttp::class, 'handle']);
+
+        if (! $this->app->runningInConsole()) {
+            $collector = $this->app->make(RequestCollector::class);
+
+            Event::listen(QueryExecuted::class, [$collector, 'recordQuery']);
+            Event::listen('eloquent.*', [$collector, 'recordModel']);
+            Event::listen(JobQueued::class, [$collector, 'recordJob']);
+            Event::listen(JobProcessing::class, [$collector, 'enterJob']);
+            Event::listen(JobProcessed::class, [$collector, 'exitJob']);
+            Event::listen(JobFailed::class, [$collector, 'exitJob']);
+        }
     }
 }

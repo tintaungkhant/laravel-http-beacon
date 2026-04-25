@@ -8,11 +8,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Tintaungkhant\TrafficMonitor\RequestCollector;
 
 class LogIncomingHttp
 {
+    public function __construct(private RequestCollector $collector) {}
+
     public function handle(RequestHandled $event): void
     {
+        $collected = $this->collector->flush();
+
         Log::info('[traffic-monitor] incoming http', [
             'time' => now()->toIso8601String(),
             'hostname' => $event->request->getHost(),
@@ -22,11 +27,15 @@ class LogIncomingHttp
             'path' => $event->request->getRequestUri(),
             'status' => $event->response->getStatusCode(),
             'duration_ms' => $this->duration($event->request),
+            'memory_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
             'ip' => $event->request->ip(),
             'payload' => $this->payload($event->request),
             'request_headers' => $this->formatHeaders($event->request->headers->all()),
             'response' => $this->responseBody($event->response),
             'response_headers' => $this->formatHeaders($event->response->headers->all()),
+            'queries' => $collected['queries'],
+            'models' => $collected['models'],
+            'jobs' => $collected['jobs'],
         ]);
     }
 
