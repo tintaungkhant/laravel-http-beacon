@@ -6,15 +6,17 @@ use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Tintaungkhant\TrafficMonitor\Models\OutgoingRequest;
+use Tintaungkhant\TrafficMonitor\RequestCollector;
 
 class LogOutgoingHttp
 {
+    public function __construct(private RequestCollector $collector) {}
+
     public function handleResponse(ResponseReceived $event): void
     {
-        Log::info('[traffic-monitor] outgoing http', [
-            'time' => now()->toIso8601String(),
+        $this->persist([
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
             'uri' => $event->request->url(),
@@ -24,19 +26,31 @@ class LogOutgoingHttp
             'request_headers' => $this->formatHeaders($event->request->headers()),
             'response' => $this->responseBody($event->response),
             'response_headers' => $this->formatHeaders($event->response->headers()),
+            'failed' => false,
         ]);
     }
 
     public function handleFailure(ConnectionFailed $event): void
     {
-        Log::warning('[traffic-monitor] outgoing http failed', [
-            'time' => now()->toIso8601String(),
+        $this->persist([
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
             'uri' => $event->request->url(),
             'payload' => $this->payload($event->request),
             'request_headers' => $this->formatHeaders($event->request->headers()),
+            'failed' => true,
         ]);
+    }
+
+    private function persist(array $attributes): void
+    {
+        $this->collector->pause();
+
+        try {
+            OutgoingRequest::create($attributes);
+        } finally {
+            $this->collector->resume();
+        }
     }
 
     private function hostname(Request $request): string

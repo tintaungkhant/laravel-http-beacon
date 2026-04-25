@@ -17,11 +17,11 @@ class RequestCollector
 
     private array $jobs = [];
 
-    private int $jobDepth = 0;
+    private int $pauseDepth = 0;
 
     public function recordQuery(QueryExecuted $event): void
     {
-        if ($this->jobDepth > 0) {
+        if ($this->pauseDepth > 0) {
             return;
         }
 
@@ -35,7 +35,7 @@ class RequestCollector
 
     public function recordModel(string $event, array $data): void
     {
-        if ($this->jobDepth > 0) {
+        if ($this->pauseDepth > 0) {
             return;
         }
 
@@ -75,7 +75,7 @@ class RequestCollector
 
     public function recordJob(JobQueued $event): void
     {
-        if ($this->jobDepth > 0) {
+        if ($this->pauseDepth > 0) {
             return;
         }
 
@@ -90,14 +90,14 @@ class RequestCollector
         ];
     }
 
-    public function enterJob(): void
+    public function pause(): void
     {
-        $this->jobDepth++;
+        $this->pauseDepth++;
     }
 
-    public function exitJob(): void
+    public function resume(): void
     {
-        $this->jobDepth = max(0, $this->jobDepth - 1);
+        $this->pauseDepth = max(0, $this->pauseDepth - 1);
     }
 
     public function flush(): array
@@ -111,7 +111,7 @@ class RequestCollector
         $this->queries = [];
         $this->models = [];
         $this->jobs = [];
-        $this->jobDepth = 0;
+        $this->pauseDepth = 0;
 
         return $data;
     }

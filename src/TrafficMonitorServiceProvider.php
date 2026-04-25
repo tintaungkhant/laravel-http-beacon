@@ -27,6 +27,7 @@ class TrafficMonitorServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->publishes([
             __DIR__.'/../config/traffic-monitor.php' => config_path('traffic-monitor.php'),
@@ -43,9 +44,9 @@ class TrafficMonitorServiceProvider extends ServiceProvider
             Event::listen(QueryExecuted::class, [$collector, 'recordQuery']);
             Event::listen('eloquent.*', [$collector, 'recordModel']);
             Event::listen(JobQueued::class, [$collector, 'recordJob']);
-            Event::listen(JobProcessing::class, [$collector, 'enterJob']);
-            Event::listen(JobProcessed::class, [$collector, 'exitJob']);
-            Event::listen(JobFailed::class, [$collector, 'exitJob']);
+            Event::listen(JobProcessing::class, [$collector, 'pause']);
+            Event::listen(JobProcessed::class, [$collector, 'resume']);
+            Event::listen(JobFailed::class, [$collector, 'resume']);
         }
     }
 }
