@@ -44,11 +44,16 @@ return [
     | Header & Parameter Redaction
     |--------------------------------------------------------------------------
     |
-    | Header names (case-insensitive) and parameter keys (dot notation)
-    | whose values are masked before being persisted. Applied to both
-    | directions and to both request and response sides.
+    | redact: master switch for redaction. When false, hidden_headers and
+    |         hidden_parameters lists are ignored — values are stored as-is.
+    | hidden_headers: header names (case-insensitive) whose values are masked.
+    | hidden_parameters: parameter keys (dot notation, supports *) whose
+    |                    values are masked. Applied to payloads, response
+    |                    JSON, model changes, and job payloads.
     |
     */
+
+    'redact' => (bool) env('BEACON_REDACT', true),
 
     'hidden_headers' => [
         'authorization',

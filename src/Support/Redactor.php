@@ -8,7 +8,10 @@ class Redactor
 
     public static function headers(array $headers): array
     {
-        $hidden = array_map('strtolower', (array) config('beacon.hidden_headers', []));
+        $hidden = self::enabled()
+            ? array_map('strtolower', (array) config('beacon.hidden_headers', []))
+            : [];
+
         $result = [];
 
         foreach ($headers as $name => $values) {
@@ -22,7 +25,7 @@ class Redactor
 
     public static function parameters(mixed $data): mixed
     {
-        if (! is_array($data)) {
+        if (! is_array($data) || ! self::enabled()) {
             return $data;
         }
 
@@ -33,6 +36,11 @@ class Redactor
         }
 
         return $data;
+    }
+
+    private static function enabled(): bool
+    {
+        return (bool) config('beacon.redact', true);
     }
 
     private static function maskPath(array &$data, array $segments): void
