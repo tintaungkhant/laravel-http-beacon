@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Get the migration connection name.
+     */
+    public function getConnection(): ?string
+    {
+        return config('beacon.storage.connection');
+    }
+
     public function up(): void
     {
         Schema::create('beacon_outgoing_requests', function (Blueprint $table) {
