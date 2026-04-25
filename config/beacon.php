@@ -41,6 +41,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Route Middleware
+    |--------------------------------------------------------------------------
+    |
+    | Middleware applied to every Beacon route — both the dashboard view and
+    | the JSON API endpoints. Defaults to the 'web' group (sessions + CSRF +
+    | error sharing). Add your own gate here, e.g. ['web', 'auth', 'can:viewBeacon'].
+    |
+    */
+
+    'middleware' => ['web'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Header & Parameter Redaction
     |--------------------------------------------------------------------------
     |

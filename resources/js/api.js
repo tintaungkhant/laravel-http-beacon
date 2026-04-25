@@ -1,13 +1,25 @@
 const base = '/beacon/api'
 
+function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+}
+
 async function request(path, options = {}) {
-    const res = await fetch(`${base}${path}`, {
-        ...options,
-        headers: {
-            Accept: 'application/json',
-            ...(options.headers || {}),
-        },
-    })
+    const method = (options.method ?? 'GET').toUpperCase()
+    const headers = {
+        Accept: 'application/json',
+        ...(options.headers || {}),
+    }
+
+    if (method !== 'GET' && method !== 'HEAD') {
+        const token = csrfToken()
+        if (token) {
+            headers['X-CSRF-TOKEN'] = token
+        }
+    }
+
+    const res = await fetch(`${base}${path}`, { ...options, headers })
+
     if (!res.ok) {
         throw new Error(`Request failed: ${res.status}`)
     }

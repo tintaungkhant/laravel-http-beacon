@@ -5,10 +5,20 @@ namespace HttpBeacon\Tests;
 use HttpBeacon\BeaconServiceProvider;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Routes default to the 'web' middleware group, which includes CSRF.
+        // Tests don't carry a session token, so disable that single check.
+        $this->withoutMiddleware([VerifyCsrfToken::class]);
+    }
+
     protected function getPackageProviders($app): array
     {
         return [BeaconServiceProvider::class];
@@ -16,6 +26,8 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
             'driver' => 'sqlite',
