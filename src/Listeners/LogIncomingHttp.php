@@ -129,6 +129,7 @@ class LogIncomingHttp
             'sql_with_bindings' => $q['sql_with_bindings'],
             'bindings' => ! empty($q['bindings']) ? json_encode($q['bindings']) : null,
             'time_ms' => $q['time_ms'],
+            'caller' => $q['caller'] ?? null,
         ], $queries);
     }
 
@@ -148,6 +149,7 @@ class LogIncomingHttp
             'model_id' => $m['id'] !== null ? (string) $m['id'] : null,
             'action' => $m['action'],
             'changes' => $m['changes'] !== null ? json_encode($m['changes']) : null,
+            'caller' => $m['caller'] ?? null,
         ], $models);
     }
 
@@ -159,6 +161,7 @@ class LogIncomingHttp
             'connection' => $j['connection'] ?? null,
             'queue' => $j['queue'] ?? null,
             'payload' => $j['payload'] !== null ? json_encode($j['payload']) : null,
+            'caller' => $j['caller'] ?? null,
         ], $jobs);
     }
 

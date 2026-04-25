@@ -169,6 +169,7 @@ onMounted(load)
                             <tr>
                                 <th class="px-4 py-2">Type</th>
                                 <th class="px-4 py-2">SQL</th>
+                                <th class="px-4 py-2">Caller</th>
                                 <th class="px-4 py-2 text-right">Time</th>
                             </tr>
                         </thead>
@@ -176,6 +177,7 @@ onMounted(load)
                             <tr v-for="q in queries" :key="q.id">
                                 <td class="px-4 py-2 align-top text-xs font-semibold uppercase text-slate-500">{{ q.type }}</td>
                                 <td class="px-4 py-2 font-mono text-xs text-slate-800"><div class="max-w-3xl break-all">{{ q.sql_with_bindings || q.sql }}</div></td>
+                                <td class="px-4 py-2 align-top font-mono text-xs text-slate-500">{{ q.caller || '—' }}</td>
                                 <td class="whitespace-nowrap px-4 py-2 text-right align-top text-slate-500">{{ q.time_ms }} ms</td>
                             </tr>
                         </tbody>
@@ -189,6 +191,7 @@ onMounted(load)
                             <tr>
                                 <th class="px-4 py-2">Action</th>
                                 <th class="px-4 py-2">Model</th>
+                                <th class="px-4 py-2">Caller</th>
                                 <th class="px-4 py-2">Changes</th>
                             </tr>
                         </thead>
@@ -198,6 +201,7 @@ onMounted(load)
                                 <td class="px-4 py-2 align-top font-mono text-xs text-slate-800">
                                     {{ m.model_class }}<span v-if="m.model_id" class="text-slate-500">#{{ m.model_id }}</span>
                                 </td>
+                                <td class="px-4 py-2 align-top font-mono text-xs text-slate-500">{{ m.caller || '—' }}</td>
                                 <td class="px-4 py-2 align-top">
                                     <JsonViewer :value="m.changes" />
                                 </td>
@@ -212,6 +216,7 @@ onMounted(load)
                         <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-4 py-2">Job</th>
+                                <th class="px-4 py-2">Caller</th>
                                 <th class="px-4 py-2">Connection</th>
                                 <th class="px-4 py-2">Queue</th>
                                 <th class="px-4 py-2">Payload</th>
@@ -220,6 +225,7 @@ onMounted(load)
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="j in jobs" :key="j.id">
                                 <td class="px-4 py-2 align-top font-mono text-xs text-slate-800">{{ j.job_class }}</td>
+                                <td class="px-4 py-2 align-top font-mono text-xs text-slate-500">{{ j.caller || '—' }}</td>
                                 <td class="px-4 py-2 align-top text-slate-700">{{ j.connection || '—' }}</td>
                                 <td class="px-4 py-2 align-top text-slate-700">{{ j.queue || '—' }}</td>
                                 <td class="px-4 py-2 align-top">

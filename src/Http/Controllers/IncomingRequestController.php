@@ -36,9 +36,9 @@ class IncomingRequestController extends Controller
     {
         $request = IncomingRequest::query()
             ->with([
-                'queries:id,request_id,connection,type,sql,bindings,sql_with_bindings,time_ms,created_at',
-                'modelTouches:id,request_id,model_class,model_id,action,changes,created_at',
-                'jobDispatches:id,request_id,job_class,connection,queue,payload,created_at',
+                'queries:id,request_id,connection,type,sql,bindings,sql_with_bindings,time_ms,caller,created_at',
+                'modelTouches:id,request_id,model_class,model_id,action,changes,caller,created_at',
+                'jobDispatches:id,request_id,job_class,connection,queue,payload,caller,created_at',
             ])
             ->findOrFail($id);
 

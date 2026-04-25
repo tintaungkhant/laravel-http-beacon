@@ -2,6 +2,7 @@
 
 namespace HttpBeacon;
 
+use HttpBeacon\Support\Caller;
 use HttpBeacon\Support\Redactor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
@@ -57,6 +58,7 @@ class RequestCollector
             'bindings' => $event->bindings,
             'time_ms' => $event->time,
             'connection' => $event->connectionName,
+            'caller' => Caller::find(),
         ];
     }
 
@@ -83,6 +85,7 @@ class RequestCollector
             'id' => $model->getKey(),
             'action' => $action,
             'changes' => $this->extractChanges($model, $action),
+            'caller' => Caller::find(),
         ];
     }
 
@@ -100,6 +103,7 @@ class RequestCollector
             'connection' => $event->connectionName,
             'queue' => $event->queue,
             'payload' => $isObject ? $this->extractJobPayload($job) : null,
+            'caller' => Caller::find(),
         ];
     }
 
