@@ -174,18 +174,32 @@ class LogOutgoingHttp
             return 'Streamed Response';
         }
 
-        $content = $response->body();
-        $stream->rewind();
+        if ($response->redirect()) {
+            return 'Redirected to '.$response->header('Location');
+        }
+
+        $contentType = strtolower($response->header('Content-Type') ?? '');
+
+        if ($this->isBinaryContentType($contentType)) {
+            return 'Binary or non-text response';
+        }
+
+        $limit = $this->bodySizeLimitBytes();
+
+        $declared = $response->header('Content-Length');
+        if ($limit > 0 && $declared !== null && (int) $declared > $limit) {
+            return 'Truncated';
+        }
+
+        $content = $this->readBoundedBody($stream, $limit);
+
+        if ($content === null) {
+            return 'Truncated';
+        }
 
         if ($content === '') {
             return 'Empty Response';
         }
-
-        if ($this->exceedsLimit($content)) {
-            return 'Truncated';
-        }
-
-        $contentType = strtolower($response->header('Content-Type') ?? '');
 
         if (Str::contains($contentType, 'application/json')) {
             $decoded = json_decode($content, true);
@@ -199,21 +213,61 @@ class LogOutgoingHttp
             return $content;
         }
 
-        if ($response->redirect()) {
-            return 'Redirected to '.$response->header('Location');
-        }
-
         return 'Binary or non-text response';
     }
 
-    private function exceedsLimit(string $content): bool
+    private function readBoundedBody(\Psr\Http\Message\StreamInterface $stream, int $limit): ?string
     {
-        $limit = config('beacon.outgoing.body_size_limit_kb');
+        $stream->rewind();
 
-        if ($limit === null || $limit === 0) {
+        if ($limit === 0) {
+            $content = (string) $stream;
+            $stream->rewind();
+
+            return $content;
+        }
+
+        $content = '';
+
+        while (! $stream->eof()) {
+            $content .= $stream->read(8192);
+
+            if (strlen($content) > $limit) {
+                $stream->rewind();
+
+                return null;
+            }
+        }
+
+        $stream->rewind();
+
+        return $content;
+    }
+
+    private function isBinaryContentType(string $contentType): bool
+    {
+        if ($contentType === '') {
             return false;
         }
 
-        return mb_strlen($content) / 1000 > $limit;
+        return Str::startsWith($contentType, [
+            'image/',
+            'video/',
+            'audio/',
+            'font/',
+            'application/pdf',
+            'application/zip',
+            'application/x-tar',
+            'application/x-gzip',
+            'application/x-7z-compressed',
+            'application/octet-stream',
+        ]);
+    }
+
+    private function bodySizeLimitBytes(): int
+    {
+        $kb = (int) config('beacon.outgoing.body_size_limit_kb', 0);
+
+        return $kb > 0 ? $kb * 1000 : 0;
     }
 }
