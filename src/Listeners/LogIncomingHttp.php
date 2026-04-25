@@ -110,20 +110,15 @@ class LogIncomingHttp
 
     private function buildQueryRows(int $requestId, array $queries): array
     {
-        $signatures = array_map(fn ($q) => md5($q['sql']), $queries);
-        $occurrences = array_count_values($signatures);
-
-        return array_map(fn ($q, $signature) => [
+        return array_map(fn ($q) => [
             'request_id' => $requestId,
             'connection' => $q['connection'],
             'type' => $this->extractQueryType($q['sql']),
             'sql' => $q['sql'],
             'sql_with_bindings' => $q['sql_with_bindings'],
-            'sql_signature' => $signature,
             'bindings' => ! empty($q['bindings']) ? json_encode($q['bindings']) : null,
             'time_ms' => $q['time_ms'],
-            'occurrences' => $occurrences[$signature],
-        ], $queries, $signatures);
+        ], $queries);
     }
 
     private function extractQueryType(string $sql): string

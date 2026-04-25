@@ -56,14 +56,11 @@ return new class extends Migration
             $table->foreignId('request_id')->constrained('beacon_incoming_requests')->cascadeOnDelete();
             $table->string('connection')->nullable();
             $table->string('type', 10);
-            $table->char('sql_signature', 32);
             $table->text('sql');
             $table->json('bindings')->nullable();
             $table->text('sql_with_bindings');
             $table->decimal('time_ms', 10, 2)->index();
-            $table->unsignedInteger('occurrences')->default(1);
             $table->timestamp('created_at')->useCurrent();
-            $table->index(['sql_signature', 'created_at']);
         });
     }
 

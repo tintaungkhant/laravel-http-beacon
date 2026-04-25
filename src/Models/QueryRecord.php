@@ -22,7 +22,6 @@ class QueryRecord extends Model
         'request_id' => 'integer',
         'bindings' => 'array',
         'time_ms' => 'float',
-        'occurrences' => 'integer',
         'created_at' => 'datetime',
     ];
 
