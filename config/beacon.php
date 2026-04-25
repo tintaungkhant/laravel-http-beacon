@@ -24,7 +24,7 @@ return [
     */
 
     'storage' => [
-        'connection' => env('BEACON_DB_CONNECTION'),
+        'connection' => env('DB_CONNECTION', 'mysql'),
     ],
 
     /*
