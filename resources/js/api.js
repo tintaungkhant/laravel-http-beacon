@@ -16,8 +16,18 @@ async function request(path, options = {}) {
     return json.data
 }
 
-function listPath(resource, beforeId) {
-    return beforeId ? `/${resource}?before_id=${beforeId}` : `/${resource}`
+function buildQuery(params) {
+    const qs = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === '' || value === null || value === undefined || value === false) return
+        qs.set(key, value === true ? '1' : String(value))
+    })
+    return qs.toString()
+}
+
+function listPath(resource, params) {
+    const q = buildQuery(params)
+    return q ? `/${resource}?${q}` : `/${resource}`
 }
 
 export const api = {
@@ -30,12 +40,12 @@ export const api = {
         resume: () => request('/recording/resume', { method: 'POST' }),
     },
     incoming: {
-        list: (beforeId = null) => request(listPath('incoming-requests', beforeId)),
+        list: (params = {}) => request(listPath('incoming-requests', params)),
         show: (id) => request(`/incoming-requests/${id}`),
         clear: () => request('/incoming-requests', { method: 'DELETE' }),
     },
     outgoing: {
-        list: (beforeId = null) => request(listPath('outgoing-requests', beforeId)),
+        list: (params = {}) => request(listPath('outgoing-requests', params)),
         show: (id) => request(`/outgoing-requests/${id}`),
         clear: () => request('/outgoing-requests', { method: 'DELETE' }),
     },

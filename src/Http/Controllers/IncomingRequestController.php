@@ -3,18 +3,26 @@
 namespace HttpBeacon\Http\Controllers;
 
 use HttpBeacon\Models\IncomingRequest;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class IncomingRequestController extends Controller
 {
+    private const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
+
     public function index(Request $request): JsonResponse
     {
-        $beforeId = $request->query('before_id');
+        $query = IncomingRequest::query();
 
-        $rows = IncomingRequest::query()
-            ->when($beforeId, fn ($q) => $q->where('id', '<', (int) $beforeId))
+        $this->applyFilters($query, $request);
+
+        if ($beforeId = $request->query('before_id')) {
+            $query->where('id', '<', (int) $beforeId);
+        }
+
+        $rows = $query
             ->orderByDesc('id')
             ->limit(50)
             ->get([
@@ -50,5 +58,32 @@ class IncomingRequestController extends Controller
         IncomingRequest::query()->delete();
 
         return response()->json(['data' => ['cleared' => true]]);
+    }
+
+    private function applyFilters(Builder $query, Request $request): void
+    {
+        if ($search = trim((string) $request->query('search', ''))) {
+            $query->where('path', 'like', '%'.$search.'%');
+        }
+
+        $method = strtoupper((string) $request->query('method', ''));
+        if ($method !== '' && in_array($method, self::ALLOWED_METHODS, true)) {
+            $query->where('method', $method);
+        }
+
+        if ($range = $this->statusRange((string) $request->query('status', ''))) {
+            $query->whereBetween('status', $range);
+        }
+    }
+
+    private function statusRange(string $status): ?array
+    {
+        return match (strtolower($status)) {
+            '2xx' => [200, 299],
+            '3xx' => [300, 399],
+            '4xx' => [400, 499],
+            '5xx' => [500, 599],
+            default => null,
+        };
     }
 }
