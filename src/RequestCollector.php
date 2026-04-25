@@ -1,6 +1,6 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor;
+namespace HttpBeacon;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
@@ -115,7 +115,7 @@ class RequestCollector
     private function modelActionPatterns(): array
     {
         if ($this->modelActionPatterns === null) {
-            $actions = (array) config('traffic-monitor.collect.model_actions', [
+            $actions = (array) config('beacon.collect.model_actions', [
                 'created', 'updated', 'deleted', 'restored', 'retrieved',
             ]);
             $this->modelActionPatterns = array_map(fn ($a) => "eloquent.{$a}:*", $actions);

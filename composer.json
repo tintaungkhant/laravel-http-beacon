@@ -1,5 +1,5 @@
 {
-    "name": "tintaungkhant/traffic-monitor",
+    "name": "tintaungkhant/laravel-http-beacon",
     "description": "A lightweight Laravel package for logging incoming and outgoing HTTP requests.",
     "type": "library",
     "license": "MIT",
@@ -23,13 +23,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Tintaungkhant\\TrafficMonitor\\": "src/"
+            "HttpBeacon\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Tintaungkhant\\TrafficMonitor\\TrafficMonitorServiceProvider"
+                "HttpBeacon\\BeaconServiceProvider"
             ]
         }
     },

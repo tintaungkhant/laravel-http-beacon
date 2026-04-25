@@ -1,6 +1,6 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor\Models;
+namespace HttpBeacon\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,7 +14,7 @@ class OutgoingRequest extends Model
 
     public function getConnectionName()
     {
-        return config('traffic-monitor.storage.connection');
+        return config('beacon.storage.connection');
     }
 
     protected $casts = [

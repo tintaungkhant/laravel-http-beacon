@@ -1,15 +1,15 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor\Listeners;
+namespace HttpBeacon\Listeners;
 
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Tintaungkhant\TrafficMonitor\Models\IncomingRequest;
-use Tintaungkhant\TrafficMonitor\RequestCollector;
-use Tintaungkhant\TrafficMonitor\Support\Redactor;
+use HttpBeacon\Models\IncomingRequest;
+use HttpBeacon\RequestCollector;
+use HttpBeacon\Support\Redactor;
 
 class LogIncomingHttp
 {
@@ -51,7 +51,7 @@ class LogIncomingHttp
 
     private function shouldRecord(RequestHandled $event): bool
     {
-        $config = config('traffic-monitor.incoming');
+        $config = config('beacon.incoming');
 
         if (Str::is((array) ($config['ignore_paths'] ?? []), $event->request->path())) {
             return false;
@@ -70,7 +70,7 @@ class LogIncomingHttp
 
     private function passesSampling(): bool
     {
-        $rate = (float) config('traffic-monitor.sampling_rate', 1.0);
+        $rate = (float) config('beacon.sampling_rate', 1.0);
 
         if ($rate >= 1.0) {
             return true;
@@ -85,7 +85,7 @@ class LogIncomingHttp
 
     private function memoryMb(): ?float
     {
-        if (! config('traffic-monitor.collect.memory', true)) {
+        if (! config('beacon.collect.memory', true)) {
             return null;
         }
 
@@ -167,7 +167,7 @@ class LogIncomingHttp
 
     private function exceedsLimit(string $content): bool
     {
-        $limit = config('traffic-monitor.incoming.body_size_limit_kb');
+        $limit = config('beacon.incoming.body_size_limit_kb');
 
         if ($limit === null || $limit === 0) {
             return false;

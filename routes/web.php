@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/traffic-monitor', function () {
-    return 'Hello, World from TrafficMonitor!';
+Route::get('/beacon', function () {
+    return 'Hello, World from Beacon!';
 });

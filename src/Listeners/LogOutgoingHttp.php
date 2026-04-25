@@ -1,15 +1,15 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor\Listeners;
+namespace HttpBeacon\Listeners;
 
 use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
-use Tintaungkhant\TrafficMonitor\Models\OutgoingRequest;
-use Tintaungkhant\TrafficMonitor\RequestCollector;
-use Tintaungkhant\TrafficMonitor\Support\Redactor;
+use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\RequestCollector;
+use HttpBeacon\Support\Redactor;
 
 class LogOutgoingHttp
 {
@@ -54,7 +54,7 @@ class LogOutgoingHttp
     private function shouldRecord(Request $request): bool
     {
         $host = $this->hostname($request);
-        $ignore = (array) config('traffic-monitor.outgoing.ignore_hosts', []);
+        $ignore = (array) config('beacon.outgoing.ignore_hosts', []);
 
         if ($ignore && Str::is($ignore, $host)) {
             return false;
@@ -65,7 +65,7 @@ class LogOutgoingHttp
 
     private function passesSampling(): bool
     {
-        $rate = (float) config('traffic-monitor.sampling_rate', 1.0);
+        $rate = (float) config('beacon.sampling_rate', 1.0);
 
         if ($rate >= 1.0) {
             return true;
@@ -151,7 +151,7 @@ class LogOutgoingHttp
 
     private function exceedsLimit(string $content): bool
     {
-        $limit = config('traffic-monitor.outgoing.body_size_limit_kb');
+        $limit = config('beacon.outgoing.body_size_limit_kb');
 
         if ($limit === null || $limit === 0) {
             return false;

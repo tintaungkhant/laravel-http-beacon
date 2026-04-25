@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'enabled' => env('TRAFFIC_MONITOR_ENABLED', true),
+    'enabled' => env('BEACON_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ return [
     */
 
     'storage' => [
-        'connection' => env('TRAFFIC_MONITOR_DB_CONNECTION'),
+        'connection' => env('BEACON_DB_CONNECTION'),
     ],
 
     /*
@@ -37,7 +37,7 @@ return [
     |
     */
 
-    'sampling_rate' => (float) env('TRAFFIC_MONITOR_SAMPLING_RATE', 1.0),
+    'sampling_rate' => (float) env('BEACON_SAMPLING_RATE', 1.0),
 
     /*
     |--------------------------------------------------------------------------
@@ -83,7 +83,7 @@ return [
         'enabled' => true,
         'body_size_limit_kb' => 64,
         'ignore_paths' => [
-            'traffic-monitor*',
+            'beacon*',
             'horizon*',
             'telescope*',
             '_ignition*',

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor\Support;
+namespace HttpBeacon\Support;
 
 use Illuminate\Support\Arr;
 
@@ -10,7 +10,7 @@ class Redactor
 
     public static function headers(array $headers): array
     {
-        $hidden = array_map('strtolower', (array) config('traffic-monitor.hidden_headers', []));
+        $hidden = array_map('strtolower', (array) config('beacon.hidden_headers', []));
         $result = [];
 
         foreach ($headers as $name => $values) {
@@ -28,7 +28,7 @@ class Redactor
             return $data;
         }
 
-        $hidden = (array) config('traffic-monitor.hidden_parameters', []);
+        $hidden = (array) config('beacon.hidden_parameters', []);
 
         foreach ($hidden as $key) {
             if (Arr::has($data, $key)) {

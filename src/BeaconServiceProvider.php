@@ -1,6 +1,6 @@
 <?php
 
-namespace Tintaungkhant\TrafficMonitor;
+namespace HttpBeacon;
 
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
@@ -12,14 +12,14 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Tintaungkhant\TrafficMonitor\Listeners\LogIncomingHttp;
-use Tintaungkhant\TrafficMonitor\Listeners\LogOutgoingHttp;
+use HttpBeacon\Listeners\LogIncomingHttp;
+use HttpBeacon\Listeners\LogOutgoingHttp;
 
-class TrafficMonitorServiceProvider extends ServiceProvider
+class BeaconServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/traffic-monitor.php', 'traffic-monitor');
+        $this->mergeConfigFrom(__DIR__.'/../config/beacon.php', 'beacon');
 
         $this->app->singleton(RequestCollector::class);
     }
@@ -29,10 +29,10 @@ class TrafficMonitorServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->publishes([
-            __DIR__.'/../config/traffic-monitor.php' => config_path('traffic-monitor.php'),
-        ], 'traffic-monitor-config');
+            __DIR__.'/../config/beacon.php' => config_path('beacon.php'),
+        ], 'beacon-config');
 
-        if (! $this->app['config']->get('traffic-monitor.enabled', true)) {
+        if (! $this->app['config']->get('beacon.enabled', true)) {
             return;
         }
 
@@ -44,7 +44,7 @@ class TrafficMonitorServiceProvider extends ServiceProvider
 
     private function registerOutgoingListeners(): void
     {
-        if (! $this->app['config']->get('traffic-monitor.outgoing.enabled', true)) {
+        if (! $this->app['config']->get('beacon.outgoing.enabled', true)) {
             return;
         }
 
@@ -54,7 +54,7 @@ class TrafficMonitorServiceProvider extends ServiceProvider
 
     private function registerIncomingListeners(): void
     {
-        if (! $this->app['config']->get('traffic-monitor.incoming.enabled', true)) {
+        if (! $this->app['config']->get('beacon.incoming.enabled', true)) {
             return;
         }
 
@@ -65,7 +65,7 @@ class TrafficMonitorServiceProvider extends ServiceProvider
         }
 
         $collector = $this->app->make(RequestCollector::class);
-        $collect = (array) $this->app['config']->get('traffic-monitor.collect', []);
+        $collect = (array) $this->app['config']->get('beacon.collect', []);
 
         if ($collect['queries'] ?? true) {
             Event::listen(QueryExecuted::class, [$collector, 'recordQuery']);
