@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use HttpBeacon\Beacon;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\JobDispatch;
 use HttpBeacon\Models\ModelTouch;
@@ -67,6 +68,10 @@ class LogIncomingHttp
 
     private function shouldRecord(RequestHandled $event): bool
     {
+        if (! Beacon::isRecording()) {
+            return false;
+        }
+
         $config = config('beacon.incoming');
         $path = $event->request->path();
 

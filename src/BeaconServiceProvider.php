@@ -12,7 +12,11 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use HttpBeacon\Console\Commands\ClearCommand;
+use HttpBeacon\Console\Commands\InstallCommand;
+use HttpBeacon\Console\Commands\PauseCommand;
 use HttpBeacon\Console\Commands\PruneCommand;
+use HttpBeacon\Console\Commands\ResumeCommand;
 use HttpBeacon\Listeners\LogIncomingHttp;
 use HttpBeacon\Listeners\LogOutgoingHttp;
 
@@ -27,14 +31,20 @@ class BeaconServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-
         $this->publishes([
             __DIR__.'/../config/beacon.php' => config_path('beacon.php'),
         ], 'beacon-config');
 
+        $this->publishesMigrations([
+            __DIR__.'/../database/migrations' => database_path('migrations'),
+        ], 'beacon-migrations');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
+                InstallCommand::class,
+                ClearCommand::class,
+                PauseCommand::class,
+                ResumeCommand::class,
                 PruneCommand::class,
             ]);
         }

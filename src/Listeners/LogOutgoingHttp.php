@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
+use HttpBeacon\Beacon;
 use HttpBeacon\Models\OutgoingRequest;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Redactor;
@@ -70,6 +71,10 @@ class LogOutgoingHttp
 
     private function shouldRecord(Request $request): bool
     {
+        if (! Beacon::isRecording()) {
+            return false;
+        }
+
         $host = $this->hostname($request);
         $ignore = (array) config('beacon.outgoing.ignore_hosts', []);
 
