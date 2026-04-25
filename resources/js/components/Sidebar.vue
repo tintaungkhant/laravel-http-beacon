@@ -10,7 +10,16 @@ import { RouterLink } from 'vue-router'
         </div>
 
         <nav class="px-3 py-4">
-            <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">HTTP</p>
+            <RouterLink
+                to="/dashboard"
+                active-class="bg-indigo-50 text-indigo-700"
+                class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                    <path d="M3 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4Zm0 9a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3Zm9-9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V4Zm0 8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-4Z" />
+                </svg>
+                Dashboard
+            </RouterLink>
             <RouterLink
                 to="/incoming"
                 active-class="bg-indigo-50 text-indigo-700"

@@ -21,6 +21,9 @@ function listPath(resource, beforeId) {
 }
 
 export const api = {
+    dashboard: {
+        summary: () => request('/dashboard'),
+    },
     recording: {
         status: () => request('/recording'),
         pause: () => request('/recording/pause', { method: 'POST' }),

@@ -1,5 +1,6 @@
 <?php
 
+use HttpBeacon\Http\Controllers\DashboardController;
 use HttpBeacon\Http\Controllers\IncomingRequestController;
 use HttpBeacon\Http\Controllers\OutgoingRequestController;
 use HttpBeacon\Http\Controllers\RecordingController;
@@ -7,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('beacon')->group(function () {
     Route::prefix('api')->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index']);
+
         Route::get('recording', [RecordingController::class, 'show']);
         Route::post('recording/pause', [RecordingController::class, 'pause']);
         Route::post('recording/resume', [RecordingController::class, 'resume']);
