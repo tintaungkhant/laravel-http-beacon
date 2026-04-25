@@ -1,11 +1,12 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { api } from '../api.js'
 import { timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
+const router = useRouter()
 const summary = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -105,13 +106,14 @@ onMounted(load)
                             <tr v-if="!summary.incoming.slowest.length">
                                 <td class="px-4 py-6 text-center text-slate-400" colspan="4">No data.</td>
                             </tr>
-                            <tr v-for="row in summary.incoming.slowest" :key="row.id" class="hover:bg-slate-50">
+                            <tr
+                                v-for="row in summary.incoming.slowest"
+                                :key="row.id"
+                                class="cursor-pointer hover:bg-slate-50"
+                                @click="router.push({ name: 'incoming.show', params: { id: row.id } })"
+                            >
                                 <td class="whitespace-nowrap px-4 py-2.5"><MethodBadge :method="row.method" /></td>
-                                <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.path">
-                                    <RouterLink :to="{ name: 'incoming.show', params: { id: row.id } }" class="hover:text-indigo-700">
-                                        {{ truncate(row.path, 40) }}
-                                    </RouterLink>
-                                </td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.path">{{ truncate(row.path, 40) }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5"><StatusBadge :status="row.status" /></td>
                                 <td class="whitespace-nowrap px-4 py-2.5 text-right text-slate-500">{{ row.duration_ms }}ms</td>
                             </tr>
@@ -128,13 +130,14 @@ onMounted(load)
                             <tr v-if="!summary.outgoing.slowest.length">
                                 <td class="px-4 py-6 text-center text-slate-400" colspan="4">No data.</td>
                             </tr>
-                            <tr v-for="row in summary.outgoing.slowest" :key="row.id" class="hover:bg-slate-50">
+                            <tr
+                                v-for="row in summary.outgoing.slowest"
+                                :key="row.id"
+                                class="cursor-pointer hover:bg-slate-50"
+                                @click="router.push({ name: 'outgoing.show', params: { id: row.id } })"
+                            >
                                 <td class="whitespace-nowrap px-4 py-2.5"><MethodBadge :method="row.method" /></td>
-                                <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.uri">
-                                    <RouterLink :to="{ name: 'outgoing.show', params: { id: row.id } }" class="hover:text-indigo-700">
-                                        {{ truncate(row.hostname || row.uri, 40) }}
-                                    </RouterLink>
-                                </td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.uri">{{ truncate(row.hostname || row.uri, 40) }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5">
                                     <span v-if="row.failed" class="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-200">FAILED</span>
                                     <StatusBadge v-else :status="row.status" />
