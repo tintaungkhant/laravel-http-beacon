@@ -2,6 +2,13 @@
 
 namespace HttpBeacon;
 
+use HttpBeacon\Console\Commands\ClearCommand;
+use HttpBeacon\Console\Commands\InstallCommand;
+use HttpBeacon\Console\Commands\PauseCommand;
+use HttpBeacon\Console\Commands\PruneCommand;
+use HttpBeacon\Console\Commands\ResumeCommand;
+use HttpBeacon\Listeners\LogIncomingHttp;
+use HttpBeacon\Listeners\LogOutgoingHttp;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Client\Events\ConnectionFailed;
@@ -12,13 +19,6 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use HttpBeacon\Console\Commands\ClearCommand;
-use HttpBeacon\Console\Commands\InstallCommand;
-use HttpBeacon\Console\Commands\PauseCommand;
-use HttpBeacon\Console\Commands\PruneCommand;
-use HttpBeacon\Console\Commands\ResumeCommand;
-use HttpBeacon\Listeners\LogIncomingHttp;
-use HttpBeacon\Listeners\LogOutgoingHttp;
 
 class BeaconServiceProvider extends ServiceProvider
 {

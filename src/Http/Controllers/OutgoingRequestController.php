@@ -60,7 +60,7 @@ class OutgoingRequestController extends Controller
         if ($search = trim((string) $request->query('search', ''))) {
             $query->where(function (Builder $q) use ($search) {
                 $q->where('uri', 'like', '%'.$search.'%')
-                  ->orWhere('hostname', 'like', '%'.$search.'%');
+                    ->orWhere('hostname', 'like', '%'.$search.'%');
             });
         }
 

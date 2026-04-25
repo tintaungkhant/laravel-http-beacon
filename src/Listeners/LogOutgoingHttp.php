@@ -2,16 +2,17 @@
 
 namespace HttpBeacon\Listeners;
 
+use HttpBeacon\Beacon;
+use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\RequestCollector;
+use HttpBeacon\Support\Redactor;
 use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
+use Psr\Http\Message\StreamInterface;
 use Symfony\Component\HttpFoundation\File\File;
-use HttpBeacon\Beacon;
-use HttpBeacon\Models\OutgoingRequest;
-use HttpBeacon\RequestCollector;
-use HttpBeacon\Support\Redactor;
 
 class LogOutgoingHttp
 {
@@ -218,7 +219,7 @@ class LogOutgoingHttp
         return 'Binary or non-text response';
     }
 
-    private function readBoundedBody(\Psr\Http\Message\StreamInterface $stream, int $limit): ?string
+    private function readBoundedBody(StreamInterface $stream, int $limit): ?string
     {
         $stream->rewind();
 

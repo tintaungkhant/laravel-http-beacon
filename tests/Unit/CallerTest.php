@@ -2,6 +2,7 @@
 
 namespace HttpBeacon\Tests\Unit;
 
+use BeaconCallerFixture\Runner;
 use HttpBeacon\Support\Caller;
 use HttpBeacon\Tests\TestCase;
 
@@ -29,7 +30,7 @@ class CallerTest extends TestCase
             PHP);
 
         require $tmp;
-        $caller = (new \BeaconCallerFixture\Runner())->trigger();
+        $caller = (new Runner)->trigger();
 
         @unlink($tmp);
 

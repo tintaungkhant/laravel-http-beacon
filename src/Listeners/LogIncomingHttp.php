@@ -2,11 +2,6 @@
 
 namespace HttpBeacon\Listeners;
 
-use Illuminate\Foundation\Http\Events\RequestHandled;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
 use HttpBeacon\Beacon;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\JobDispatch;
@@ -14,6 +9,11 @@ use HttpBeacon\Models\ModelTouch;
 use HttpBeacon\Models\QueryRecord;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Redactor;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class LogIncomingHttp
 {
