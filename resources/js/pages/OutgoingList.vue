@@ -13,6 +13,9 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const error = ref(null)
 const hasMore = ref(false)
+const recording = ref(true)
+const togglingRecording = ref(false)
+const clearing = ref(false)
 
 async function load() {
     loading.value = true
@@ -44,20 +47,81 @@ async function loadMore() {
     }
 }
 
-onMounted(load)
+async function loadRecording() {
+    try {
+        const state = await api.recording.status()
+        recording.value = state.recording
+    } catch {
+        // ignore — leave default
+    }
+}
+
+async function toggleRecording() {
+    togglingRecording.value = true
+    try {
+        const state = recording.value
+            ? await api.recording.pause()
+            : await api.recording.resume()
+        recording.value = state.recording
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        togglingRecording.value = false
+    }
+}
+
+async function clearAll() {
+    if (!confirm('Delete all recorded outgoing requests? This cannot be undone.')) return
+    clearing.value = true
+    try {
+        await api.outgoing.clear()
+        await load()
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        clearing.value = false
+    }
+}
+
+onMounted(() => {
+    load()
+    loadRecording()
+})
 </script>
 
 <template>
     <div>
         <div class="mb-4 flex items-center justify-between">
             <h1 class="text-xl font-semibold text-slate-900">Outgoing Requests</h1>
-            <button
-                type="button"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                @click="load"
-            >
-                Refresh
-            </button>
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="togglingRecording"
+                    :title="recording ? 'Click to pause recording' : 'Click to resume recording'"
+                    @click="toggleRecording"
+                >
+                    <span class="size-2 rounded-full" :class="recording ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                    {{ recording ? 'Recording' : 'Paused' }}
+                </button>
+
+                <button
+                    type="button"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    @click="load"
+                >
+                    Refresh
+                </button>
+
+                <button
+                    type="button"
+                    class="rounded-md border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="clearing || rows.length === 0"
+                    @click="clearAll"
+                >
+                    {{ clearing ? 'Deleting…' : 'Delete all' }}
+                </button>
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">

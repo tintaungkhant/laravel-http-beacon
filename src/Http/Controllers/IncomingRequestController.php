@@ -44,4 +44,11 @@ class IncomingRequestController extends Controller
 
         return response()->json(['data' => $request]);
     }
+
+    public function destroy(): JsonResponse
+    {
+        IncomingRequest::query()->delete();
+
+        return response()->json(['data' => ['cleared' => true]]);
+    }
 }
