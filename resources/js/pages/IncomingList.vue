@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { timeAgo, truncate } from '../utils.js'
+import { localToUtcIso, timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
@@ -40,8 +40,8 @@ function activeParams() {
         search: filters.search || undefined,
         method: filters.method || undefined,
         status: filters.status || undefined,
-        from: filters.from || undefined,
-        to: filters.to || undefined,
+        from: localToUtcIso(filters.from),
+        to: localToUtcIso(filters.to),
     }
 }
 

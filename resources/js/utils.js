@@ -76,6 +76,12 @@ export function truncate(str, max = 60) {
     return s.length > max ? s.slice(0, max - 1) + '…' : s
 }
 
+export function localToUtcIso(value) {
+    if (!value) return undefined
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? undefined : d.toISOString()
+}
+
 export function formatJson(value) {
     if (value === null || value === undefined) return ''
     if (typeof value === 'string') return value
