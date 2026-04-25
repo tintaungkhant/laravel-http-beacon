@@ -12,6 +12,7 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use HttpBeacon\Console\Commands\PruneCommand;
 use HttpBeacon\Listeners\LogIncomingHttp;
 use HttpBeacon\Listeners\LogOutgoingHttp;
 
@@ -31,6 +32,12 @@ class BeaconServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/beacon.php' => config_path('beacon.php'),
         ], 'beacon-config');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                PruneCommand::class,
+            ]);
+        }
 
         if (! $this->app['config']->get('beacon.enabled', true)) {
             return;

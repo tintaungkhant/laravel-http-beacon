@@ -132,4 +132,22 @@ return [
         'max_queries_per_request' => null, // null or 0 = unlimited
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Retention
+    |--------------------------------------------------------------------------
+    |
+    | Used by the `beacon:prune` artisan command. Schedule it externally
+    | via your application's scheduler (no auto-scheduling provided).
+    |
+    | hours:      delete entries older than this many hours.
+    | chunk_size: rows per delete statement when pruning (avoid long locks).
+    |
+    */
+
+    'retention' => [
+        'hours' => (int) env('BEACON_RETENTION_HOURS', 168),
+        'chunk_size' => 1000,
+    ],
+
 ];
