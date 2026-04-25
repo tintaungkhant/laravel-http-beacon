@@ -2,6 +2,7 @@
 
 namespace HttpBeacon\Http\Controllers;
 
+use Carbon\Carbon;
 use HttpBeacon\Models\OutgoingRequest;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +74,14 @@ class OutgoingRequestController extends Controller
         } elseif ($range = $this->statusRange((string) $request->query('status', ''))) {
             $query->whereBetween('status', $range);
         }
+
+        if ($from = $this->parseDate($request->query('from'))) {
+            $query->where('created_at', '>=', $from);
+        }
+
+        if ($to = $this->parseDate($request->query('to'))) {
+            $query->where('created_at', '<=', $to);
+        }
     }
 
     private function statusRange(string $status): ?array
@@ -84,5 +93,20 @@ class OutgoingRequestController extends Controller
             '5xx' => [500, 599],
             default => null,
         };
+    }
+
+    private function parseDate(mixed $value): ?Carbon
+    {
+        $value = trim((string) ($value ?? ''));
+
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

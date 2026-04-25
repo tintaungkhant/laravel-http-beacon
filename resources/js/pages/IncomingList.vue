@@ -16,9 +16,13 @@ const filters = reactive({
     search: route.query.search ?? '',
     method: route.query.method ?? '',
     status: route.query.status ?? '',
+    from: route.query.from ?? '',
+    to: route.query.to ?? '',
 })
 
-const hasActiveFilters = computed(() => filters.search || filters.method || filters.status)
+const hasActiveFilters = computed(() =>
+    filters.search || filters.method || filters.status || filters.from || filters.to,
+)
 
 const rows = ref([])
 const loading = ref(true)
@@ -36,6 +40,8 @@ function activeParams() {
         search: filters.search || undefined,
         method: filters.method || undefined,
         status: filters.status || undefined,
+        from: filters.from || undefined,
+        to: filters.to || undefined,
     }
 }
 
@@ -73,6 +79,8 @@ function clearFilters() {
     filters.search = ''
     filters.method = ''
     filters.status = ''
+    filters.from = ''
+    filters.to = ''
 }
 
 async function loadRecording() {
@@ -118,6 +126,8 @@ watch(filters, () => {
         if (filters.search) query.search = filters.search
         if (filters.method) query.method = filters.method
         if (filters.status) query.status = filters.status
+        if (filters.from) query.from = filters.from
+        if (filters.to) query.to = filters.to
         router.replace({ query })
         load()
     }, 250)
@@ -188,6 +198,22 @@ onMounted(() => {
                 <option value="4xx">4xx Client Error</option>
                 <option value="5xx">5xx Server Error</option>
             </select>
+            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                From
+                <input
+                    v-model="filters.from"
+                    type="datetime-local"
+                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+            </label>
+            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                To
+                <input
+                    v-model="filters.to"
+                    type="datetime-local"
+                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+            </label>
             <button
                 v-if="hasActiveFilters"
                 type="button"

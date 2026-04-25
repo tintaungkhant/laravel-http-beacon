@@ -17,9 +17,13 @@ const filters = reactive({
     method: route.query.method ?? '',
     status: route.query.status ?? '',
     failed: route.query.failed === '1',
+    from: route.query.from ?? '',
+    to: route.query.to ?? '',
 })
 
-const hasActiveFilters = computed(() => filters.search || filters.method || filters.status || filters.failed)
+const hasActiveFilters = computed(() =>
+    filters.search || filters.method || filters.status || filters.failed || filters.from || filters.to,
+)
 
 const rows = ref([])
 const loading = ref(true)
@@ -38,6 +42,8 @@ function activeParams() {
         method: filters.method || undefined,
         status: filters.failed ? undefined : (filters.status || undefined),
         failed: filters.failed || undefined,
+        from: filters.from || undefined,
+        to: filters.to || undefined,
     }
 }
 
@@ -76,6 +82,8 @@ function clearFilters() {
     filters.method = ''
     filters.status = ''
     filters.failed = false
+    filters.from = ''
+    filters.to = ''
 }
 
 async function loadRecording() {
@@ -122,6 +130,8 @@ watch(filters, () => {
         if (filters.method) query.method = filters.method
         if (filters.status && !filters.failed) query.status = filters.status
         if (filters.failed) query.failed = '1'
+        if (filters.from) query.from = filters.from
+        if (filters.to) query.to = filters.to
         router.replace({ query })
         load()
     }, 250)
@@ -196,6 +206,22 @@ onMounted(() => {
             <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
                 <input v-model="filters.failed" type="checkbox" class="size-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
                 Failed only
+            </label>
+            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                From
+                <input
+                    v-model="filters.from"
+                    type="datetime-local"
+                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+            </label>
+            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                To
+                <input
+                    v-model="filters.to"
+                    type="datetime-local"
+                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
             </label>
             <button
                 v-if="hasActiveFilters"
