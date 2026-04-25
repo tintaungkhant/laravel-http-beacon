@@ -6,19 +6,41 @@ import { timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
+const PAGE_SIZE = 50
+
 const rows = ref([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const error = ref(null)
+const hasMore = ref(false)
 
 async function load() {
     loading.value = true
     error.value = null
     try {
-        rows.value = await api.outgoing.list()
+        const page = await api.outgoing.list()
+        rows.value = page
+        hasMore.value = page.length === PAGE_SIZE
     } catch (e) {
         error.value = e.message
     } finally {
         loading.value = false
+    }
+}
+
+async function loadMore() {
+    if (loadingMore.value || !rows.value.length) return
+    loadingMore.value = true
+    error.value = null
+    try {
+        const lastId = rows.value[rows.value.length - 1].id
+        const page = await api.outgoing.list(lastId)
+        rows.value.push(...page)
+        hasMore.value = page.length === PAGE_SIZE
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        loadingMore.value = false
     }
 }
 
@@ -85,6 +107,17 @@ onMounted(load)
                     </tr>
                 </tbody>
             </table>
+
+            <div v-if="!loading && hasMore" class="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                <button
+                    type="button"
+                    class="rounded-md border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="loadingMore"
+                    @click="loadMore"
+                >
+                    {{ loadingMore ? 'Loading…' : 'Load more' }}
+                </button>
+            </div>
         </div>
     </div>
 </template>

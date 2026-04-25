@@ -4,13 +4,17 @@ namespace HttpBeacon\Http\Controllers;
 
 use HttpBeacon\Models\OutgoingRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class OutgoingRequestController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $beforeId = $request->query('before_id');
+
         $rows = OutgoingRequest::query()
+            ->when($beforeId, fn ($q) => $q->where('id', '<', (int) $beforeId))
             ->orderByDesc('id')
             ->limit(50)
             ->get([

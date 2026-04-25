@@ -11,13 +11,17 @@ async function request(path) {
     return json.data
 }
 
+function listPath(resource, beforeId) {
+    return beforeId ? `/${resource}?before_id=${beforeId}` : `/${resource}`
+}
+
 export const api = {
     incoming: {
-        list: () => request('/incoming-requests'),
+        list: (beforeId = null) => request(listPath('incoming-requests', beforeId)),
         show: (id) => request(`/incoming-requests/${id}`),
     },
     outgoing: {
-        list: () => request('/outgoing-requests'),
+        list: (beforeId = null) => request(listPath('outgoing-requests', beforeId)),
         show: (id) => request(`/outgoing-requests/${id}`),
     },
 }
