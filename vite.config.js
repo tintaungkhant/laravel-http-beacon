@@ -5,6 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
     plugins: [vue(), tailwindcss()],
+    publicDir: false,
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),
