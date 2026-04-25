@@ -19,6 +19,8 @@ class RequestCollector
 
     private int $pauseDepth = 0;
 
+    private ?array $modelActionPatterns = null;
+
     public function recordQuery(QueryExecuted $event): void
     {
         if ($this->pauseDepth > 0) {
@@ -39,13 +41,7 @@ class RequestCollector
             return;
         }
 
-        if (! Str::is([
-            'eloquent.created:*',
-            'eloquent.updated:*',
-            'eloquent.deleted:*',
-            'eloquent.restored:*',
-            'eloquent.retrieved:*',
-        ], $event)) {
+        if (! Str::is($this->modelActionPatterns(), $event)) {
             return;
         }
 
@@ -114,6 +110,18 @@ class RequestCollector
         $this->pauseDepth = 0;
 
         return $data;
+    }
+
+    private function modelActionPatterns(): array
+    {
+        if ($this->modelActionPatterns === null) {
+            $actions = (array) config('traffic-monitor.collect.model_actions', [
+                'created', 'updated', 'deleted', 'restored', 'retrieved',
+            ]);
+            $this->modelActionPatterns = array_map(fn ($a) => "eloquent.{$a}:*", $actions);
+        }
+
+        return $this->modelActionPatterns;
     }
 
     private function extractAction(string $event): string

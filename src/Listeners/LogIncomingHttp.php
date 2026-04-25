@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Tintaungkhant\TrafficMonitor\Models\IncomingRequest;
 use Tintaungkhant\TrafficMonitor\RequestCollector;
+use Tintaungkhant\TrafficMonitor\Support\Redactor;
 
 class LogIncomingHttp
 {
@@ -17,6 +18,10 @@ class LogIncomingHttp
     public function handle(RequestHandled $event): void
     {
         $collected = $this->collector->flush();
+
+        if (! $this->shouldRecord($event)) {
+            return;
+        }
 
         $this->collector->pause();
 
@@ -29,12 +34,12 @@ class LogIncomingHttp
                 'path' => $event->request->getRequestUri(),
                 'status' => $event->response->getStatusCode(),
                 'duration_ms' => $this->duration($event->request),
-                'memory_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+                'memory_mb' => $this->memoryMb(),
                 'ip' => $event->request->ip(),
                 'payload' => $this->payload($event->request),
-                'request_headers' => $this->formatHeaders($event->request->headers->all()),
+                'request_headers' => Redactor::headers($event->request->headers->all()),
                 'response' => $this->responseBody($event->response),
-                'response_headers' => $this->formatHeaders($event->response->headers->all()),
+                'response_headers' => Redactor::headers($event->response->headers->all()),
                 'queries' => $collected['queries'],
                 'models' => $collected['models'],
                 'jobs' => $collected['jobs'],
@@ -42,6 +47,49 @@ class LogIncomingHttp
         } finally {
             $this->collector->resume();
         }
+    }
+
+    private function shouldRecord(RequestHandled $event): bool
+    {
+        $config = config('traffic-monitor.incoming');
+
+        if (Str::is((array) ($config['ignore_paths'] ?? []), $event->request->path())) {
+            return false;
+        }
+
+        if (in_array(strtoupper($event->request->method()), array_map('strtoupper', (array) ($config['ignore_methods'] ?? [])), true)) {
+            return false;
+        }
+
+        if (in_array($event->response->getStatusCode(), (array) ($config['ignore_status_codes'] ?? []), true)) {
+            return false;
+        }
+
+        return $this->passesSampling();
+    }
+
+    private function passesSampling(): bool
+    {
+        $rate = (float) config('traffic-monitor.sampling_rate', 1.0);
+
+        if ($rate >= 1.0) {
+            return true;
+        }
+
+        if ($rate <= 0.0) {
+            return false;
+        }
+
+        return mt_rand() / mt_getrandmax() < $rate;
+    }
+
+    private function memoryMb(): ?float
+    {
+        if (! config('traffic-monitor.collect.memory', true)) {
+            return null;
+        }
+
+        return round(memory_get_peak_usage(true) / 1024 / 1024, 2);
     }
 
     private function middlewares(Request $request): array
@@ -77,18 +125,7 @@ class LogIncomingHttp
             ];
         });
 
-        return array_replace_recursive($request->input(), $files);
-    }
-
-    private function formatHeaders(array $headers): array
-    {
-        $result = [];
-
-        foreach ($headers as $name => $values) {
-            $result[strtolower($name)] = implode(', ', (array) $values);
-        }
-
-        return $result;
+        return Redactor::parameters(array_replace_recursive($request->input(), $files));
     }
 
     private function responseBody(Response $response): mixed
@@ -113,7 +150,7 @@ class LogIncomingHttp
             $decoded = json_decode($content, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
-                return $decoded;
+                return Redactor::parameters($decoded);
             }
         }
 

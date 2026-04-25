@@ -12,6 +12,11 @@ class OutgoingRequest extends Model
 
     protected $guarded = [];
 
+    public function getConnectionName()
+    {
+        return config('traffic-monitor.storage.connection');
+    }
+
     protected $casts = [
         'payload' => 'array',
         'request_headers' => 'array',

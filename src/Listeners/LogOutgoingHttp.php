@@ -9,6 +9,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
 use Tintaungkhant\TrafficMonitor\Models\OutgoingRequest;
 use Tintaungkhant\TrafficMonitor\RequestCollector;
+use Tintaungkhant\TrafficMonitor\Support\Redactor;
 
 class LogOutgoingHttp
 {
@@ -16,6 +17,10 @@ class LogOutgoingHttp
 
     public function handleResponse(ResponseReceived $event): void
     {
+        if (! $this->shouldRecord($event->request)) {
+            return;
+        }
+
         $this->persist([
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
@@ -23,23 +28,54 @@ class LogOutgoingHttp
             'status' => $event->response->status(),
             'duration_ms' => $this->duration($event->response),
             'payload' => $this->payload($event->request),
-            'request_headers' => $this->formatHeaders($event->request->headers()),
+            'request_headers' => Redactor::headers($event->request->headers()),
             'response' => $this->responseBody($event->response),
-            'response_headers' => $this->formatHeaders($event->response->headers()),
+            'response_headers' => Redactor::headers($event->response->headers()),
             'failed' => false,
         ]);
     }
 
     public function handleFailure(ConnectionFailed $event): void
     {
+        if (! $this->shouldRecord($event->request)) {
+            return;
+        }
+
         $this->persist([
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
             'uri' => $event->request->url(),
             'payload' => $this->payload($event->request),
-            'request_headers' => $this->formatHeaders($event->request->headers()),
+            'request_headers' => Redactor::headers($event->request->headers()),
             'failed' => true,
         ]);
+    }
+
+    private function shouldRecord(Request $request): bool
+    {
+        $host = $this->hostname($request);
+        $ignore = (array) config('traffic-monitor.outgoing.ignore_hosts', []);
+
+        if ($ignore && Str::is($ignore, $host)) {
+            return false;
+        }
+
+        return $this->passesSampling();
+    }
+
+    private function passesSampling(): bool
+    {
+        $rate = (float) config('traffic-monitor.sampling_rate', 1.0);
+
+        if ($rate >= 1.0) {
+            return true;
+        }
+
+        if ($rate <= 0.0) {
+            return false;
+        }
+
+        return mt_rand() / mt_getrandmax() < $rate;
     }
 
     private function persist(array $attributes): void
@@ -77,18 +113,7 @@ class LogOutgoingHttp
                 ->all();
         }
 
-        return $request->data();
-    }
-
-    private function formatHeaders(array $headers): array
-    {
-        $result = [];
-
-        foreach ($headers as $name => $values) {
-            $result[strtolower($name)] = implode(', ', (array) $values);
-        }
-
-        return $result;
+        return Redactor::parameters($request->data());
     }
 
     private function responseBody(Response $response): mixed
@@ -109,7 +134,7 @@ class LogOutgoingHttp
             $decoded = json_decode($content, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
-                return $decoded;
+                return Redactor::parameters($decoded);
             }
         }
 

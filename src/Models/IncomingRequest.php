@@ -12,6 +12,11 @@ class IncomingRequest extends Model
 
     protected $guarded = [];
 
+    public function getConnectionName()
+    {
+        return config('traffic-monitor.storage.connection');
+    }
+
     protected $casts = [
         'middlewares' => 'array',
         'payload' => 'array',
