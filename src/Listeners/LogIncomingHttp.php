@@ -116,7 +116,7 @@ class LogIncomingHttp
 
     private function exceedsLimit(string $content): bool
     {
-        $limit = config('traffic-monitor.body_size_limit_kb');
+        $limit = config('traffic-monitor.incoming.body_size_limit_kb');
 
         if ($limit === null || $limit === 0) {
             return false;

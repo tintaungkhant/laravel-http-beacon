@@ -13,6 +13,12 @@ return [
     |
     */
 
-    'body_size_limit_kb' => 64,
+    'incoming' => [
+        'body_size_limit_kb' => 64,
+    ],
+
+    'outgoing' => [
+        'body_size_limit_kb' => 64,
+    ],
 
 ];
