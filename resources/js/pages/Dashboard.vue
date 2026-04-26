@@ -104,7 +104,7 @@ onMounted(load)
                     <table class="min-w-full divide-y divide-slate-200 text-sm">
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!summary.incoming.slowest.length">
-                                <td class="px-4 py-6 text-center text-slate-400" colspan="4">No data.</td>
+                                <td class="px-4 py-6 text-center text-slate-400" colspan="5">No data.</td>
                             </tr>
                             <tr
                                 v-for="row in summary.incoming.slowest"
@@ -112,6 +112,7 @@ onMounted(load)
                                 class="cursor-pointer hover:bg-slate-50"
                                 @click="router.push({ name: 'incoming.show', params: { id: row.id } })"
                             >
+                                <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-500">#{{ row.id }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5"><MethodBadge :method="row.method" /></td>
                                 <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.path">{{ truncate(row.path, 40) }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5"><StatusBadge :status="row.status" /></td>
@@ -128,7 +129,7 @@ onMounted(load)
                     <table class="min-w-full divide-y divide-slate-200 text-sm">
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!summary.outgoing.slowest.length">
-                                <td class="px-4 py-6 text-center text-slate-400" colspan="4">No data.</td>
+                                <td class="px-4 py-6 text-center text-slate-400" colspan="5">No data.</td>
                             </tr>
                             <tr
                                 v-for="row in summary.outgoing.slowest"
@@ -136,6 +137,7 @@ onMounted(load)
                                 class="cursor-pointer hover:bg-slate-50"
                                 @click="router.push({ name: 'outgoing.show', params: { id: row.id } })"
                             >
+                                <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-500">#{{ row.id }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5"><MethodBadge :method="row.method" /></td>
                                 <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.uri">{{ truncate(row.hostname || row.uri, 40) }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5">
