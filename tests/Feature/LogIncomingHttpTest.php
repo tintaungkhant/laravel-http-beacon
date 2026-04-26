@@ -23,6 +23,7 @@ class LogIncomingHttpTest extends TestCase
         $response = new Response('ok', 201);
 
         event(new RequestHandled($request, $response));
+        $this->app->terminate();
 
         $this->assertSame(1, IncomingRequest::query()->count());
         $row = IncomingRequest::query()->first();
@@ -36,6 +37,7 @@ class LogIncomingHttpTest extends TestCase
         Beacon::pause();
 
         event(new RequestHandled(Request::create('/foo'), new Response('ok', 200)));
+        $this->app->terminate();
 
         $this->assertSame(0, IncomingRequest::query()->count());
     }
@@ -46,6 +48,7 @@ class LogIncomingHttpTest extends TestCase
 
         event(new RequestHandled(Request::create('/web/home'), new Response('ok', 200)));
         event(new RequestHandled(Request::create('/api/users'), new Response('ok', 200)));
+        $this->app->terminate();
 
         $this->assertSame(1, IncomingRequest::query()->count());
         $this->assertSame('/api/users', IncomingRequest::query()->value('path'));
@@ -62,6 +65,7 @@ class LogIncomingHttpTest extends TestCase
         ));
 
         event(new RequestHandled(Request::create('/foo'), new Response('ok', 200)));
+        $this->app->terminate();
 
         $this->assertSame(1, IncomingRequest::query()->count());
         $this->assertSame(1, QueryRecord::query()->count());

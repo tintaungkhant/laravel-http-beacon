@@ -18,6 +18,7 @@ class LogOutgoingHttpTest extends TestCase
         ]);
 
         Http::get('https://api.example.com/users');
+        $this->app->terminate();
 
         $this->assertSame(1, OutgoingRequest::query()->count());
         $row = OutgoingRequest::query()->first();
@@ -34,6 +35,7 @@ class LogOutgoingHttpTest extends TestCase
 
         Http::withHeaders(['Authorization' => 'Bearer secret-token'])
             ->get('https://api.example.com/private');
+        $this->app->terminate();
 
         $row = OutgoingRequest::query()->first();
         $this->assertNotNull($row);
