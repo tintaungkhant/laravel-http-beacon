@@ -44,7 +44,7 @@ function listPath(resource, params) {
 
 export const api = {
     dashboard: {
-        summary: () => request('/dashboard'),
+        summary: (params = {}) => request(listPath('dashboard', params)),
     },
     recording: {
         status: () => request('/recording'),

@@ -25,7 +25,7 @@ class DashboardControllerTest extends TestCase
         $response = $this->getJson('/beacon/api/dashboard');
 
         $response->assertOk();
-        $this->assertSame(24, $response->json('data.window_hours'));
+        $this->assertNotNull($response->json('data.since'));
 
         $this->assertSame(3, $response->json('data.incoming.total'));
         $this->assertSame(1, $response->json('data.incoming.status_buckets.2xx'));
