@@ -97,12 +97,17 @@ return [
     |              Applied after only_paths.
     | ignore_methods: HTTP methods to skip (case-insensitive).
     | ignore_status_codes: response status codes to skip.
+    | max_rows: hard cap on stored rows. When exceeded, oldest entries are
+    |   trimmed (FIFO). Set to null or 0 for unlimited. The check fires
+    |   roughly every 100 inserts and is concurrency-safe via a cache lock,
+    |   so over-shoot is bounded by ~CHECK_INTERVAL rows.
     |
     */
 
     'incoming' => [
         'enabled' => true,
         'body_size_limit_kb' => 64,
+        'max_rows' => null,
         'only_paths' => [
             // 'api/*',
         ],
@@ -122,12 +127,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | ignore_hosts: glob patterns matched against the request URI host.
+    | max_rows: same semantics as incoming.max_rows.
     |
     */
 
     'outgoing' => [
         'enabled' => true,
         'body_size_limit_kb' => 64,
+        'max_rows' => null,
         'ignore_hosts' => [],
     ],
 
