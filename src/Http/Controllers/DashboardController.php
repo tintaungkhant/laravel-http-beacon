@@ -2,26 +2,32 @@
 
 namespace HttpBeacon\Http\Controllers;
 
+use Carbon\Carbon;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class DashboardController extends Controller
 {
-    private const WINDOW_HOURS = 24;
-
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $since = now()->subHours(self::WINDOW_HOURS);
+        [$since, $until] = $this->resolveWindow($request);
 
         $incoming = IncomingRequest::query()->where('created_at', '>=', $since);
         $outgoing = OutgoingRequest::query()->where('created_at', '>=', $since);
 
+        if ($until) {
+            $incoming->where('created_at', '<=', $until);
+            $outgoing->where('created_at', '<=', $until);
+        }
+
         return response()->json([
             'data' => [
-                'window_hours' => self::WINDOW_HOURS,
+                'since' => $since->toIso8601String(),
+                'until' => $until?->toIso8601String(),
                 'incoming' => [
                     'total' => (clone $incoming)->count(),
                     'avg_duration_ms' => (int) (clone $incoming)->avg('duration_ms'),
@@ -42,6 +48,32 @@ class DashboardController extends Controller
                 ],
             ],
         ]);
+    }
+
+    /**
+     * @return array{0:Carbon,1:?Carbon}
+     */
+    private function resolveWindow(Request $request): array
+    {
+        $since = $this->parseDate($request->query('from')) ?? now()->subDay();
+        $until = $this->parseDate($request->query('to'));
+
+        return [$since, $until];
+    }
+
+    private function parseDate(mixed $value): ?Carbon
+    {
+        $value = trim((string) ($value ?? ''));
+
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function statusBuckets(Builder $query): array
