@@ -28,28 +28,44 @@ class LogIncomingHttp
             return;
         }
 
-        $this->collector->pause();
+        // Build the row synchronously — request/response objects and headers are
+        // read NOW while they're still fresh and unmodified. Only the DB writes
+        // are deferred to terminate() so they run after the response is flushed.
         $now = now();
+        $row = [
+            'request_uuid' => $this->collector->getRequestUuid(),
+            'hostname' => $event->request->getHost(),
+            'method' => $event->request->method(),
+            'controller_action' => $event->request->route()?->getActionName(),
+            'middlewares' => $this->middlewares($event->request),
+            'path' => $event->request->getRequestUri(),
+            'status' => $event->response->getStatusCode(),
+            'duration_ms' => $this->duration($event->request),
+            'memory_mb' => $this->memoryMb(),
+            'ip' => $event->request->ip(),
+            'payload' => $this->payload($event->request),
+            'request_headers' => Redactor::headers($event->request->headers->all()),
+            'response' => $this->responseBody($event->response),
+            'response_headers' => Redactor::headers($event->response->headers->all()),
+            'query_count' => $collected['query_count'],
+            'created_at' => $now,
+        ];
+
+        app()->terminating(function () use ($row, $collected, $now) {
+            $this->persist($row, $collected, $now);
+        });
+    }
+
+    /**
+     * @param  array<string,mixed>  $row
+     * @param  array{queries:array,query_count:int,models:array,jobs:array}  $collected
+     */
+    private function persist(array $row, array $collected, \DateTimeInterface $now): void
+    {
+        $this->collector->pause();
 
         try {
-            $incoming = IncomingRequest::create([
-                'request_uuid' => $this->collector->getRequestUuid(),
-                'hostname' => $event->request->getHost(),
-                'method' => $event->request->method(),
-                'controller_action' => $event->request->route()?->getActionName(),
-                'middlewares' => $this->middlewares($event->request),
-                'path' => $event->request->getRequestUri(),
-                'status' => $event->response->getStatusCode(),
-                'duration_ms' => $this->duration($event->request),
-                'memory_mb' => $this->memoryMb(),
-                'ip' => $event->request->ip(),
-                'payload' => $this->payload($event->request),
-                'request_headers' => Redactor::headers($event->request->headers->all()),
-                'response' => $this->responseBody($event->response),
-                'response_headers' => Redactor::headers($event->response->headers->all()),
-                'query_count' => $collected['query_count'],
-                'created_at' => $now,
-            ]);
+            $incoming = IncomingRequest::create($row);
 
             if ($collected['queries']) {
                 QueryRecord::insert($this->buildQueryRows($incoming->id, $collected['queries'], $now));

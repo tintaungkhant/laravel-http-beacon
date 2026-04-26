@@ -26,7 +26,9 @@ class LogOutgoingHttp
             return;
         }
 
-        $this->persist([
+        // Read response body and walk the caller stack NOW — both are
+        // ephemeral. Defer only the DB write to after the user request is sent.
+        $row = [
             'request_uuid' => $this->collector->getRequestUuid(),
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
@@ -40,7 +42,9 @@ class LogOutgoingHttp
             'failed' => false,
             'caller_action' => Caller::find(),
             'created_at' => now(),
-        ]);
+        ];
+
+        app()->terminating(fn () => $this->persist($row));
     }
 
     public function handleFailure(ConnectionFailed $event): void
@@ -49,7 +53,7 @@ class LogOutgoingHttp
             return;
         }
 
-        $this->persist([
+        $row = [
             'request_uuid' => $this->collector->getRequestUuid(),
             'hostname' => $this->hostname($event->request),
             'method' => $event->request->method(),
@@ -60,7 +64,9 @@ class LogOutgoingHttp
             'failed' => true,
             'caller_action' => Caller::find(),
             'created_at' => now(),
-        ]);
+        ];
+
+        app()->terminating(fn () => $this->persist($row));
     }
 
     private function errorDetails(ConnectionFailed $event): array
