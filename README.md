@@ -179,33 +179,33 @@ vendor/bin/phpstan  # level 5 with larastan
 
 24-hour aggregation: incoming + outgoing volumes, failure counts, status breakdown, slowest endpoints (clickable through to detail).
 
-Dashboard
+![Dashboard](docs/screenshoots/beacon-dashboard.png)
 
 ### Incoming Requests
 
 List view with search, method, status range, date range, and clickable rows. Pause / resume / delete-all in the header.
 
-Incoming Requests List
+![Incoming Requests List](docs/screenshoots/beacon-in-list.png)
 
 ### Incoming Request Detail
 
 Full request payload, headers, response, plus the queries / models / jobs that ran during the request — each tagged with the user-code caller.
 
-Incoming Request Detail — Attributes & Tabs
+![Incoming Request Detail — Attributes & Tabs](docs/screenshoots/beacon-in-detail-1.png)
 
-Incoming Request Detail — Queries / Models / Jobs
+![Incoming Request Detail — Queries / Models / Jobs](docs/screenshoots/beacon-in-detail-2.png)
 
 ### Outgoing Requests
 
 List view with the `Failed only` toggle for connection errors.
 
-Outgoing Requests List
+![Outgoing Requests List](docs/screenshoots/beacon-out-list.png)
 
 ### Outgoing Request Detail
 
 URI, status, duration, request payload, response, and headers — same redaction rules as incoming.
 
-Outgoing Request Detail
+![Outgoing Request Detail](docs/screenshoots/beacon-out-detail-1.png)
 
 ## License
 
