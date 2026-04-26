@@ -49,16 +49,10 @@ class RowLimit
                 return;
             }
 
-            $ids = $db->table($table)
+            $db->table($table)
                 ->orderBy('id')
                 ->limit($excess)
-                ->pluck('id');
-
-            if ($ids->isNotEmpty()) {
-                $db->table($table)
-                    ->whereIn('id', $ids->all())
-                    ->delete();
-            }
+                ->delete();
         } catch (Throwable $e) {
             report($e);
         } finally {
