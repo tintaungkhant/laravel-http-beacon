@@ -228,6 +228,7 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
+                        <th class="px-4 py-3">#</th>
                         <th class="px-4 py-3">Verb</th>
                         <th class="px-4 py-3">Path</th>
                         <th class="px-4 py-3 text-center">Status</th>
@@ -238,13 +239,13 @@ onMounted(() => {
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <tr v-if="loading">
-                        <td colspan="6" class="px-4 py-10 text-center text-slate-500">Loading…</td>
+                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">Loading…</td>
                     </tr>
                     <tr v-else-if="error">
-                        <td colspan="6" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
+                        <td colspan="7" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
                     </tr>
                     <tr v-else-if="rows.length === 0">
-                        <td colspan="6" class="px-4 py-10 text-center text-slate-500">
+                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">
                             {{ hasActiveFilters ? 'No requests match the current filters.' : 'No requests recorded yet.' }}
                         </td>
                     </tr>
@@ -254,6 +255,7 @@ onMounted(() => {
                         class="cursor-pointer hover:bg-slate-50"
                         @click="router.push({ name: 'incoming.show', params: { id: row.id } })"
                     >
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">#{{ row.id }}</td>
                         <td class="whitespace-nowrap px-4 py-3"><MethodBadge :method="row.method" /></td>
                         <td class="px-4 py-3 font-mono text-slate-700" :title="row.path">{{ truncate(row.path, 60) }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-center"><StatusBadge :status="row.status" /></td>

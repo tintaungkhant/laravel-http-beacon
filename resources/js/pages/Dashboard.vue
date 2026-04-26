@@ -1,29 +1,100 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { timeAgo, truncate } from '../utils.js'
+import { truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
+const RANGES = [
+    { value: 'hour', label: 'Last One Hour' },
+    { value: 'today', label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'week', label: 'Last Week' },
+    { value: 'month', label: 'Last Month' },
+]
+
+const route = useRoute()
 const router = useRouter()
+
+const range = ref(RANGES.find((r) => r.value === route.query.range)?.value ?? 'today')
 const summary = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
 const buckets = computed(() => summary.value?.incoming.status_buckets ?? { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 })
+const rangeLabel = computed(() => RANGES.find((r) => r.value === range.value)?.label ?? '')
+
+function startOfDay(d) {
+    const out = new Date(d)
+    out.setHours(0, 0, 0, 0)
+    return out
+}
+
+function rangeBounds(name) {
+    const now = new Date()
+    switch (name) {
+        case 'hour': return [new Date(now.getTime() - 3600 * 1000), now]
+        case 'today': return [startOfDay(now), now]
+        case 'yesterday': {
+            const todayStart = startOfDay(now)
+            const yesterdayStart = new Date(todayStart.getTime() - 86400 * 1000)
+            return [yesterdayStart, new Date(todayStart.getTime() - 1)]
+        }
+        case 'this_week': {
+            // Current calendar week so far, Monday 00:00 → now (ISO 8601)
+            const todayStart = startOfDay(now)
+            const dayOfWeek = (now.getDay() + 6) % 7
+            const thisWeekStart = new Date(todayStart.getTime() - dayOfWeek * 86400 * 1000)
+            return [thisWeekStart, now]
+        }
+        case 'this_month': {
+            // Current calendar month so far, 1st 00:00 → now
+            const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+            return [firstOfThisMonth, now]
+        }
+        case 'week': {
+            // Previous calendar week, Monday → Sunday (ISO 8601)
+            const todayStart = startOfDay(now)
+            const dayOfWeek = (now.getDay() + 6) % 7  // Mon=0 .. Sun=6
+            const thisWeekStart = new Date(todayStart.getTime() - dayOfWeek * 86400 * 1000)
+            const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * 86400 * 1000)
+            const lastWeekEnd = new Date(thisWeekStart.getTime() - 1)
+            return [lastWeekStart, lastWeekEnd]
+        }
+        case 'month': {
+            // Previous calendar month, 1st 00:00 → last day 23:59:59.999
+            const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+            const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1)
+            return [firstOfLastMonth, lastOfLastMonth]
+        }
+        default: return [new Date(now.getTime() - 86400 * 1000), now]
+    }
+}
 
 async function load() {
     loading.value = true
     error.value = null
     try {
-        summary.value = await api.dashboard.summary()
+        const [from, to] = rangeBounds(range.value)
+        summary.value = await api.dashboard.summary({
+            from: from.toISOString(),
+            to: to.toISOString(),
+        })
     } catch (e) {
         error.value = e.message
     } finally {
         loading.value = false
     }
 }
+
+watch(range, (value) => {
+    router.replace({ query: { range: value } })
+    load()
+})
 
 onMounted(load)
 </script>
@@ -32,20 +103,28 @@ onMounted(load)
     <div>
         <div class="mb-4 flex items-center justify-between">
             <h1 class="text-xl font-semibold text-slate-900">Dashboard</h1>
-            <button
-                type="button"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                @click="load"
-            >
-                Refresh
-            </button>
+            <div class="flex items-center gap-2">
+                <select
+                    v-model="range"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option v-for="opt in RANGES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <button
+                    type="button"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    @click="load"
+                >
+                    Refresh
+                </button>
+            </div>
         </div>
 
         <div v-if="loading" class="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-500">Loading…</div>
         <div v-else-if="error" class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">{{ error }}</div>
 
         <template v-else-if="summary">
-            <p class="mb-4 text-sm text-slate-500">Last {{ summary.window_hours }} hours</p>
+            <p class="mb-4 text-sm text-slate-500">{{ rangeLabel }}</p>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

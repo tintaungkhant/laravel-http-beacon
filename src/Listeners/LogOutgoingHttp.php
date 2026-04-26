@@ -7,6 +7,7 @@ use HttpBeacon\Models\OutgoingRequest;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Caller;
 use HttpBeacon\Support\Redactor;
+use HttpBeacon\Support\RowLimit;
 use Illuminate\Http\Client\Events\ConnectionFailed;
 use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Http\Client\Request;
@@ -106,7 +107,9 @@ class LogOutgoingHttp
         $this->collector->pause();
 
         try {
-            OutgoingRequest::create($attributes);
+            $outgoing = OutgoingRequest::create($attributes);
+
+            RowLimit::enforce('beacon_outgoing_requests', config('beacon.outgoing.max_rows'), $outgoing->id);
         } catch (\Throwable $e) {
             report($e);
         } finally {

@@ -16,39 +16,42 @@ It is intentionally narrower than [Laravel Telescope](https://github.com/laravel
 - Incoming HTTP request capture (method, path, status, duration, memory, IP, headers, payload, response, controller action, middleware)
 - Outgoing HTTP request capture (method, URI, status, duration, headers, payload, response, error)
 - Per-request rollups: queries (with bindings), model touches (with diff), dispatched jobs (with payload)
-- Caller stack capture for queries, models, and jobs — `Class@method:line`
+- Caller stack capture for queries, models, jobs, **and outgoing HTTP calls** — `Class@method:line`
 - Header and parameter redaction (case-insensitive headers, dot/wildcard parameter paths)
-- Search + method + status-range + date-range + failed-only filters
+- Search + method + status-range + date-range + failed-only filters (date range is timezone-aware — browser local → UTC)
 - Keyset pagination (`?before_id=N`)
 - Pause / resume recording from the UI or via Artisan
 - Bulk delete from the UI
 - Retention pruning command (chunked `DELETE`)
+- **Hard row caps** (`incoming.max_rows` / `outgoing.max_rows`) — oldest entries auto-trim FIFO with concurrency-safe locking
+- **Configurable route middleware** — drop in your own auth gate via `beacon.middleware`
 - Configurable sampling rate, body size limits, ignored hosts/paths/methods/status codes
-- Dashboard with 24h aggregations: counts, status buckets, slowest endpoints, failed outgoing
+- Dashboard with **selectable time windows** (Last One Hour / Today / Yesterday / This Week / This Month / Last Week / Last Month): counts, status buckets, slowest endpoints, failed outgoing
+- UI assets served straight from `vendor/` — `composer update` ships new bundles, no `vendor:publish` follow-up
 
 ## Beacon vs Telescope
 
 
-|                                      | Beacon                         | Telescope                                  |
-| ------------------------------------ | ------------------------------ | ------------------------------------------ |
-| Incoming HTTP requests               | yes                            | yes                                        |
-| Outgoing HTTP client                 | yes                            | yes                                        |
-| Queries (with bindings + caller)     | yes                            | yes                                        |
-| Model events (with diff)             | yes                            | yes                                        |
-| Job dispatches                       | yes                            | yes                                        |
-| Caller (file:line + `Class@method`)  | queries, models, jobs          | queries only                               |
-| Authorization gates                  | no                             | yes                                        |
-| Mail / Notifications                 | no                             | yes                                        |
-| Cache / Redis                        | no                             | yes                                        |
-| Logs / Exceptions                    | no                             | yes                                        |
-| Dumps (`dd` / `dump`)                | no                             | yes                                        |
-| Schedule / Commands                  | no                             | yes                                        |
-| Views                                | no                             | yes                                        |
-| Normalized DB tables (indexed)       | yes                            | no — single JSON entries                   |
-| Indexed filter on method/status/date | yes                            | no — JSON column scans                     |
-| Built-in dashboard widgets           | yes — counts, buckets, slowest | basic listing only                         |
-| UI stack                             | Vue 3 + Tailwind v4            | Vue 2 + Bootstrap                          |
-| Auth gate by default                 | no — open at `/beacon`         | yes — `Gate::define('viewTelescope', ...)` |
+|                                      | Beacon                                                                        | Telescope                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| Incoming HTTP requests               | ✅                                                                             | ✅                                          |
+| Outgoing HTTP client                 | ✅                                                                             | ✅                                          |
+| Queries (with bindings + caller)     | ✅                                                                             | ✅                                          |
+| Model events (with diff)             | ✅                                                                             | ✅                                          |
+| Job dispatches                       | ✅                                                                             | ✅                                          |
+| Caller (file:line + `Class@method`)  | ✅ queries, models, jobs, outgoing                                             | ⚠️ queries only                            |
+| Authorization gates                  | ❌                                                                             | ✅                                          |
+| Mail / Notifications                 | ❌                                                                             | ✅                                          |
+| Cache / Redis                        | ❌                                                                             | ✅                                          |
+| Logs / Exceptions                    | ❌                                                                             | ✅                                          |
+| Dumps (`dd` / `dump`)                | ❌                                                                             | ✅                                          |
+| Schedule / Commands                  | ❌                                                                             | ✅                                          |
+| Views                                | ❌                                                                             | ✅                                          |
+| Normalized DB tables (indexed)       | ✅                                                                             | ❌ single JSON entries                      |
+| Indexed filter on method/status/date | ✅                                                                             | ❌ JSON column scans                        |
+| Built-in dashboard widgets           | ✅ counts, buckets, slowest, time-window presets                               | ⚠️ basic listing only                      |
+| UI stack                             | Vue 3 + Tailwind v4                                                           | Vue 2 + Bootstrap                          |
+| Auth gate by default                 | ❌ `beacon.middleware = ['web']` (add `'auth'` to lock down)                   | ✅ `Gate::define('viewTelescope', ...)`     |
 
 
 If you need a kitchen-sink debug tool in development, Telescope is the better fit. If you want production-grade HTTP traffic observability with fast filtering and predictable storage, use Beacon.
@@ -65,14 +68,14 @@ If you need a kitchen-sink debug tool in development, Telescope is the better fi
 composer require tintaungkhant/laravel-http-beacon
 ```
 
-Run the install command — it publishes the config, the migrations, and the compiled UI assets, then runs the migration:
+Run the install command — it publishes the config and the migrations, then run the migration:
 
 ```bash
 php artisan beacon:install
 php artisan migrate
 ```
 
-Open `/beacon` in your browser.
+Open `/beacon` in your browser. UI assets are served by the package itself — no `vendor:publish --tag=beacon-assets` step. `composer update` is the only thing you need to run when a new version ships, and the bundle URL carries a cache-buster so browsers pick up the new build automatically.
 
 ## Configuration
 
@@ -88,6 +91,10 @@ return [
 
     'sampling_rate' => (float) env('BEACON_SAMPLING_RATE', 1.0), // 0.1 = 10% of traffic
 
+    // Middleware applied to every Beacon route (dashboard view + JSON API).
+    // Add an auth gate here, e.g. ['web', 'auth', 'can:viewBeacon'].
+    'middleware' => ['web'],
+
     'redact' => (bool) env('BEACON_REDACT', true),
 
     'hidden_headers' => [
@@ -101,6 +108,7 @@ return [
     'incoming' => [
         'enabled' => true,
         'body_size_limit_kb' => 64,
+        'max_rows' => null,            // null/0 = unlimited; otherwise oldest rows are auto-trimmed FIFO
         'only_paths' => [],            // ['api/*'] to record only API routes
         'ignore_paths' => ['beacon*', 'horizon*', 'telescope*', '_ignition*'],
         'ignore_methods' => [],
@@ -110,6 +118,7 @@ return [
     'outgoing' => [
         'enabled' => true,
         'body_size_limit_kb' => 64,
+        'max_rows' => null,            // null/0 = unlimited; same FIFO trim behavior
         'ignore_hosts' => [],          // ['*.amazonaws.com']
     ],
 
@@ -156,10 +165,24 @@ Schedule::command('beacon:prune')->daily();
 
 ## Authentication
 
-Beacon ships **without** an auth gate. The `/beacon/`* routes are open by default — fine for local development, **not** for production. Wrap the package's routes in your own middleware in your app's `bootstrap/app.php`, or only enable Beacon in non-production environments:
+Beacon defaults to `'middleware' => ['web']`, which gives you sessions and CSRF but **no auth gate**. For production, add your own gate via the same config key:
 
 ```php
-// .env (production)
+// config/beacon.php
+'middleware' => ['web', 'auth', 'can:viewBeacon'],
+```
+
+…and define the gate however you normally would:
+
+```php
+// app/Providers/AppServiceProvider.php
+Gate::define('viewBeacon', fn ($user) => in_array($user->email, ['ops@example.com']));
+```
+
+Or just disable Beacon entirely in production:
+
+```bash
+# .env
 BEACON_ENABLED=false
 ```
 

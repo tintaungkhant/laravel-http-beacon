@@ -9,6 +9,7 @@ use HttpBeacon\Models\ModelTouch;
 use HttpBeacon\Models\QueryRecord;
 use HttpBeacon\RequestCollector;
 use HttpBeacon\Support\Redactor;
+use HttpBeacon\Support\RowLimit;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -61,6 +62,8 @@ class LogIncomingHttp
             if ($collected['jobs']) {
                 JobDispatch::insert($this->buildJobDispatchRows($incoming->id, $collected['jobs'], $now));
             }
+
+            RowLimit::enforce('beacon_incoming_requests', config('beacon.incoming.max_rows'), $incoming->id);
         } catch (\Throwable $e) {
             report($e);
         } finally {
