@@ -35,9 +35,15 @@ class BeaconServiceProvider extends ServiceProvider
             __DIR__.'/../config/beacon.php' => config_path('beacon.php'),
         ], 'beacon-config');
 
-        $this->publishesMigrations([
-            __DIR__.'/../database/migrations' => database_path('migrations'),
-        ], 'beacon-migrations');
+        if (method_exists($this, 'publishesMigrations')) {
+            $this->publishesMigrations([
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'beacon-migrations');
+        } else {
+            $this->publishes([
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'beacon-migrations');
+        }
 
         if ($this->app->runningInConsole()) {
             $this->commands([
