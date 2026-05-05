@@ -58,9 +58,16 @@ If you need a kitchen-sink debug tool in development, Telescope is the better fi
 
 ## Requirements
 
-- PHP 8.3+
-- Laravel 13+
+- PHP 8.1+
+- Laravel 10, 11, 12, or 13
 - MySQL, Postgres, or SQLite
+
+| Laravel | PHP   |
+| ------- | ----- |
+| 10.x    | 8.1+  |
+| 11.x    | 8.2+  |
+| 12.x    | 8.2+  |
+| 13.x    | 8.3+  |
 
 ## Installation
 
