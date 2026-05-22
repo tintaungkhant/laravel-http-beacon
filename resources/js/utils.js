@@ -38,7 +38,7 @@ export function localTimezoneLabel() {
 export function formatDateTimeLocal(date) {
     if (!date) return ''
     const d = new Date(date)
-    return `${formatYmdHms(d, false)} (${localTimezoneLabel()})`
+    return formatYmdHms(d, false)
 }
 
 export function formatYmdHmsLocal(date) {
@@ -54,7 +54,7 @@ export function formatYmdHmsUtc(date) {
 export function formatDateTimeUTC(date) {
     if (!date) return ''
     const d = new Date(date)
-    return `${formatYmdHms(d, true)} (UTC)`
+    return formatYmdHms(d, true)
 }
 
 export function methodColor(method) {

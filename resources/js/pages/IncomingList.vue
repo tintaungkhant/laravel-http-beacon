@@ -236,8 +236,8 @@ onMounted(() => {
                         <th class="px-4 py-3 text-center">Status</th>
                         <th class="px-4 py-3 text-right">Duration</th>
                         <th class="px-4 py-3">Happened</th>
-                        <th class="px-4 py-3">Created (UTC)</th>
-                        <th class="px-4 py-3">Created ({{ tz }})</th>
+                        <th class="px-4 py-3">Time ({{ tz }})</th>
+                        <th class="px-4 py-3">Time (UTC)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
@@ -268,8 +268,8 @@ onMounted(() => {
                             <span v-else>—</span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-slate-500" :title="row.created_at">{{ timeAgo(row.created_at) }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsUtc(row.created_at) }}</td>
                         <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsLocal(row.created_at) }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsUtc(row.created_at) }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-right text-indigo-600">View</td>
                     </tr>
                 </tbody>

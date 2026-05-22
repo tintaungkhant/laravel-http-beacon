@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { formatDateTimeLocal, formatDateTimeUTC } from '../utils.js'
+import { formatDateTimeLocal, formatDateTimeUTC, localTimezoneLabel, timeAgo } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import JsonViewer from '../components/JsonViewer.vue'
@@ -10,6 +10,7 @@ import JsonViewer from '../components/JsonViewer.vue'
 const props = defineProps({ id: { type: [String, Number], required: true } })
 
 const router = useRouter()
+const tz = localTimezoneLabel()
 const entry = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -75,7 +76,11 @@ onMounted(load)
                             <td class="px-4 py-2.5 font-mono text-xs text-slate-800">{{ entry.caller_action || '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="px-4 py-2.5 text-slate-500">Time</td>
+                            <td class="px-4 py-2.5 text-slate-500">Happened</td>
+                            <td class="px-4 py-2.5 text-slate-800">{{ timeAgo(entry.created_at) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2.5 text-slate-500">Time ({{ tz }})</td>
                             <td class="px-4 py-2.5 text-slate-800">{{ formatDateTimeLocal(entry.created_at) }}</td>
                         </tr>
                         <tr>
