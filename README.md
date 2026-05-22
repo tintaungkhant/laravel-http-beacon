@@ -239,35 +239,47 @@ vendor/bin/phpstan  # level 5 with larastan
 
 ### Dashboard
 
-24-hour aggregation: incoming + outgoing volumes, failure counts, status breakdown, slowest endpoints (clickable through to detail).
+Aggregation over a selectable time window: incoming + outgoing volumes, failure counts, incoming and outgoing status breakdowns, and the slowest endpoints (clickable through to detail).
 
-![Dashboard](docs/screenshoots/beacon-dashboard.png)
+![Dashboard](docs/screenshoots/dashboard.png)
 
 ### Incoming Requests
 
-List view with search, method, status range, date range, and clickable rows. Pause / resume / delete-all in the header.
+List view with wildcard search, method / status / date-range / duration filters, sort, and an auto-refresh toggle with countdown. Each row carries relative, local, and UTC timestamps. Pause / resume / delete-all in the header.
 
-![Incoming Requests List](docs/screenshoots/beacon-in-list.png)
+![Incoming Requests List](docs/screenshoots/in-list.png)
 
 ### Incoming Request Detail
 
-Full request payload, headers, response, plus the queries / models / jobs that ran during the request — each tagged with the user-code caller.
+Attributes, request payload, headers, and response — plus the queries / models / jobs that ran during the request, each tagged with the user-code caller. Share and Copy as cURL from the header.
 
-![Incoming Request Detail — Attributes & Tabs](docs/screenshoots/beacon-in-detail-1.png)
+![Incoming Request Detail — Attributes & Tabs](docs/screenshoots/in-show-1.png)
 
-![Incoming Request Detail — Queries / Models / Jobs](docs/screenshoots/beacon-in-detail-2.png)
+![Incoming Request Detail — Queries / Models / Jobs](docs/screenshoots/in-show-2.png)
 
 ### Outgoing Requests
 
-List view with the `Failed only` toggle for connection errors.
+List view with the `Failed only` toggle for connection errors — same search, sort, filters, and auto-refresh as the incoming list.
 
-![Outgoing Requests List](docs/screenshoots/beacon-out-list.png)
+![Outgoing Requests List](docs/screenshoots/out-list.png)
 
 ### Outgoing Request Detail
 
-URI, status, duration, request payload, response, and headers — same redaction rules as incoming.
+URI, status, duration, and the caller call site, plus request payload, headers, and response — same redaction rules as incoming.
 
-![Outgoing Request Detail](docs/screenshoots/beacon-out-detail-1.png)
+![Outgoing Request Detail — Attributes](docs/screenshoots/out-show-1.png)
+
+![Outgoing Request Detail — Payload & Response](docs/screenshoots/out-show-2.png)
+
+### Sharing
+
+Generate a shareable link to any captured request from its detail view, with an optional password and expiry.
+
+![Share dialog](docs/screenshoots/share-modal.png)
+
+The Shared page lists every link with its status, view count, and last-viewed time — and revokes any of them.
+
+![Shared Links](docs/screenshoots/share-list.png)
 
 ## License
 

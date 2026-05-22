@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
 
 const INTERVAL = 5
 
@@ -88,11 +88,19 @@ export function useAutoRefresh(refreshFn, storageKey) {
         autoRefresh.value ? stop() : start()
     }
 
-    // Resume a persisted-on choice; clear the timer on unmount without
-    // touching the stored flag, so navigation keeps the choice.
-    onMounted(() => {
+    // Resume a persisted-on choice; clear the timer whenever the view is
+    // hidden or gone, without touching the stored flag so the choice survives
+    // navigation. onActivated/onDeactivated cover a <KeepAlive>-cached page
+    // (so it stops polling while the user is on a detail view); onMounted/
+    // onUnmounted cover the non-cached case. run() clears first, so the
+    // mount+activate double-fire on first render is harmless.
+    function resume() {
         if (autoRefresh.value) run()
-    })
+    }
+
+    onMounted(resume)
+    onActivated(resume)
+    onDeactivated(clearTimer)
     onUnmounted(clearTimer)
 
     return { autoRefresh, countdown, refreshing, toggleAutoRefresh }

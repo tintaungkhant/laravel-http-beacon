@@ -123,7 +123,11 @@ class IncomingRequestController extends Controller
         };
 
         if ($column === 'id') {
-            if ($beforeId = $request->query('before_id')) {
+            // after_id polls for rows newer than the caller's newest (live
+            // auto-refresh); before_id is the keyset cursor for older rows.
+            if ($afterId = $request->query('after_id')) {
+                $query->where('id', '>', (int) $afterId);
+            } elseif ($beforeId = $request->query('before_id')) {
                 $query->where('id', $direction === 'asc' ? '>' : '<', (int) $beforeId);
             }
 

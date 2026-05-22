@@ -142,6 +142,18 @@ class IncomingRequestControllerTest extends TestCase
         $this->assertSame('App\\Foo@bar:7', $response->json('data.queries.0.caller'));
     }
 
+    public function test_after_id_returns_only_rows_newer_than_the_cursor(): void
+    {
+        $this->makeIncoming();
+        $b = $this->makeIncoming();
+        $c = $this->makeIncoming();
+
+        $response = $this->getJson('/beacon/api/incoming-requests?after_id='.$b->id);
+
+        $response->assertOk();
+        $this->assertSame([$c->id], array_column($response->json('data'), 'id'));
+    }
+
     public function test_destroy_clears_all_rows(): void
     {
         $this->makeIncoming();
