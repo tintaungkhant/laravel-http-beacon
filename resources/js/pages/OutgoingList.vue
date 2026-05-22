@@ -2,15 +2,29 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { localToUtcIso, timeAgo, truncate } from '../utils.js'
+import { useAutoRefresh } from '../composables/useAutoRefresh.js'
+import { formatYmdHmsLocal, formatYmdHmsUtc, localTimezoneLabel, localToUtcIso, timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
 const PAGE_SIZE = 50
 const METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
+const SORT_OPTIONS = [
+    { value: 'id_desc', label: 'ID — newest first' },
+    { value: 'id_asc', label: 'ID — oldest first' },
+    { value: 'duration_desc', label: 'Duration — slowest first' },
+    { value: 'duration_asc', label: 'Duration — fastest first' },
+]
+const DEFAULT_SORT = 'id_desc'
+const DURATION_OPS = [
+    { value: 'gte', label: 'Duration ≥' },
+    { value: 'lte', label: 'Duration ≤' },
+]
 
 const route = useRoute()
 const router = useRouter()
+
+const tz = localTimezoneLabel()
 
 const filters = reactive({
     search: route.query.search ?? '',
@@ -19,11 +33,16 @@ const filters = reactive({
     failed: route.query.failed === '1',
     from: route.query.from ?? '',
     to: route.query.to ?? '',
+    durationOp: route.query.duration_op ?? 'gte',
+    duration: route.query.duration ?? '',
+    sort: route.query.sort ?? DEFAULT_SORT,
 })
 
 const hasActiveFilters = computed(() =>
-    filters.search || filters.method || filters.status || filters.failed || filters.from || filters.to,
+    filters.search || filters.method || filters.status || filters.failed || filters.from || filters.to || filters.duration,
 )
+
+const isOffsetSort = computed(() => filters.sort.startsWith('duration'))
 
 const rows = ref([])
 const loading = ref(true)
@@ -34,8 +53,6 @@ const recording = ref(true)
 const togglingRecording = ref(false)
 const clearing = ref(false)
 
-let filterTimer = null
-
 function activeParams() {
     return {
         search: filters.search || undefined,
@@ -44,11 +61,14 @@ function activeParams() {
         failed: filters.failed || undefined,
         from: localToUtcIso(filters.from),
         to: localToUtcIso(filters.to),
+        duration: filters.duration || undefined,
+        duration_op: filters.duration ? filters.durationOp : undefined,
+        sort: filters.sort,
     }
 }
 
-async function load() {
-    loading.value = true
+async function load(quiet = false) {
+    if (!quiet) loading.value = true
     error.value = null
     try {
         const page = await api.outgoing.list(activeParams())
@@ -57,17 +77,24 @@ async function load() {
     } catch (e) {
         error.value = e.message
     } finally {
-        loading.value = false
+        if (!quiet) loading.value = false
     }
 }
+
+const { autoRefresh, countdown, refreshing, toggleAutoRefresh } = useAutoRefresh(
+    () => load(true),
+    'beacon.auto-refresh.outgoing',
+)
 
 async function loadMore() {
     if (loadingMore.value || !rows.value.length) return
     loadingMore.value = true
     error.value = null
     try {
-        const lastId = rows.value[rows.value.length - 1].id
-        const page = await api.outgoing.list({ ...activeParams(), before_id: lastId })
+        const cursor = isOffsetSort.value
+            ? { offset: rows.value.length }
+            : { before_id: rows.value[rows.value.length - 1].id }
+        const page = await api.outgoing.list({ ...activeParams(), ...cursor })
         rows.value.push(...page)
         hasMore.value = page.length === PAGE_SIZE
     } catch (e) {
@@ -77,6 +104,23 @@ async function loadMore() {
     }
 }
 
+function runSearch() {
+    const query = {}
+    if (filters.search) query.search = filters.search
+    if (filters.method) query.method = filters.method
+    if (filters.status && !filters.failed) query.status = filters.status
+    if (filters.failed) query.failed = '1'
+    if (filters.from) query.from = filters.from
+    if (filters.to) query.to = filters.to
+    if (filters.duration) {
+        query.duration = filters.duration
+        query.duration_op = filters.durationOp
+    }
+    if (filters.sort !== DEFAULT_SORT) query.sort = filters.sort
+    router.replace({ query })
+    load()
+}
+
 function clearFilters() {
     filters.search = ''
     filters.method = ''
@@ -84,6 +128,9 @@ function clearFilters() {
     filters.failed = false
     filters.from = ''
     filters.to = ''
+    filters.durationOp = 'gte'
+    filters.duration = ''
+    runSearch()
 }
 
 async function loadRecording() {
@@ -122,20 +169,8 @@ async function clearAll() {
     }
 }
 
-watch(filters, () => {
-    if (filterTimer) clearTimeout(filterTimer)
-    filterTimer = setTimeout(() => {
-        const query = {}
-        if (filters.search) query.search = filters.search
-        if (filters.method) query.method = filters.method
-        if (filters.status && !filters.failed) query.status = filters.status
-        if (filters.failed) query.failed = '1'
-        if (filters.from) query.from = filters.from
-        if (filters.to) query.to = filters.to
-        router.replace({ query })
-        load()
-    }, 250)
-})
+// Sort applies instantly; text/filter inputs wait for the Search button.
+watch(() => filters.sort, runSearch)
 
 onMounted(() => {
     load()
@@ -162,10 +197,26 @@ onMounted(() => {
                 <button
                     type="button"
                     class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    @click="load"
+                    @click="load()"
                 >
                     Refresh
                 </button>
+
+                <div class="inline-flex items-center gap-2">
+                    <button
+                        type="button"
+                        class="rounded-md border px-3 py-1.5 text-sm font-medium"
+                        :class="autoRefresh
+                            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'"
+                        @click="toggleAutoRefresh"
+                    >
+                        {{ autoRefresh ? 'Stop auto refresh' : 'Auto refresh' }}
+                    </button>
+                    <span v-if="autoRefresh" class="text-sm tabular-nums text-slate-500">
+                        {{ refreshing ? 'Refreshing…' : `Refresh in ${countdown}s` }}
+                    </span>
+                </div>
 
                 <button
                     type="button"
@@ -178,59 +229,96 @@ onMounted(() => {
             </div>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
-            <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Search host or URI…"
-                class="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <select
-                v-model="filters.method"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-                <option value="">All methods</option>
-                <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
-            </select>
-            <select
-                v-model="filters.status"
-                :disabled="filters.failed"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <option value="">All status</option>
-                <option value="2xx">2xx Success</option>
-                <option value="3xx">3xx Redirect</option>
-                <option value="4xx">4xx Client Error</option>
-                <option value="5xx">5xx Server Error</option>
-            </select>
-            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                From
+        <div class="mb-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <input
-                    v-model="filters.from"
-                    type="datetime-local"
-                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    v-model="filters.search"
+                    type="text"
+                    placeholder="Search host or URI… (* = wildcard)"
+                    title="Use * as a wildcard, e.g. */chat/*"
+                    class="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    @keyup.enter="runSearch"
                 />
-            </label>
-            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                To
-                <input
-                    v-model="filters.to"
-                    type="datetime-local"
-                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-            </label>
-            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-                <input v-model="filters.failed" type="checkbox" class="size-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
-                Failed only
-            </label>
-            <button
-                v-if="hasActiveFilters"
-                type="button"
-                class="text-sm font-medium text-slate-500 hover:text-slate-800"
-                @click="clearFilters"
-            >
-                Clear
-            </button>
+                <select
+                    v-model="filters.method"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option value="">All methods</option>
+                    <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
+                </select>
+                <select
+                    v-model="filters.status"
+                    :disabled="filters.failed"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <option value="">All status</option>
+                    <option value="2xx">2xx Success</option>
+                    <option value="3xx">3xx Redirect</option>
+                    <option value="4xx">4xx Client Error</option>
+                    <option value="5xx">5xx Server Error</option>
+                </select>
+                <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                    <input v-model="filters.failed" type="checkbox" class="size-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                    Failed only
+                </label>
+                <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                    From
+                    <input
+                        v-model="filters.from"
+                        type="datetime-local"
+                        class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                </label>
+                <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                    To
+                    <input
+                        v-model="filters.to"
+                        type="datetime-local"
+                        class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                </label>
+                <div class="inline-flex items-center">
+                    <select
+                        v-model="filters.durationOp"
+                        class="h-[34px] rounded-l-md border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                        <option v-for="op in DURATION_OPS" :key="op.value" :value="op.value">{{ op.label }}</option>
+                    </select>
+                    <input
+                        v-model="filters.duration"
+                        type="number"
+                        min="0"
+                        placeholder="ms"
+                        class="-ml-px h-[34px] w-24 rounded-r-md border border-slate-300 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        @keyup.enter="runSearch"
+                    />
+                </div>
+                <button
+                    type="button"
+                    class="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+                    @click="runSearch"
+                >
+                    Search
+                </button>
+                <button
+                    v-if="hasActiveFilters"
+                    type="button"
+                    class="text-sm font-medium text-slate-500 hover:text-slate-800"
+                    @click="clearFilters"
+                >
+                    Clear
+                </button>
+            </div>
+
+            <div class="flex items-center justify-end gap-1.5">
+                <span class="text-sm text-slate-500">Sort</span>
+                <select
+                    v-model="filters.sort"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -243,18 +331,20 @@ onMounted(() => {
                         <th class="px-4 py-3 text-center">Status</th>
                         <th class="px-4 py-3 text-right">Duration</th>
                         <th class="px-4 py-3">Happened</th>
+                        <th class="px-4 py-3">Time ({{ tz }})</th>
+                        <th class="px-4 py-3">Time (UTC)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <tr v-if="loading">
-                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">Loading…</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-slate-500">Loading…</td>
                     </tr>
                     <tr v-else-if="error">
-                        <td colspan="7" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
                     </tr>
                     <tr v-else-if="rows.length === 0">
-                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">
+                        <td colspan="9" class="px-4 py-10 text-center text-slate-500">
                             {{ hasActiveFilters ? 'No requests match the current filters.' : 'No outgoing requests recorded yet.' }}
                         </td>
                     </tr>
@@ -278,6 +368,8 @@ onMounted(() => {
                             <span v-else>—</span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-slate-500" :title="row.created_at">{{ timeAgo(row.created_at) }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsLocal(row.created_at) }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsUtc(row.created_at) }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-right text-indigo-600">View</td>
                     </tr>
                 </tbody>

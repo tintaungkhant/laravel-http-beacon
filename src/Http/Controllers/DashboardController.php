@@ -41,6 +41,7 @@ class DashboardController extends Controller
                     'total' => (clone $outgoing)->count(),
                     'failed' => (clone $outgoing)->where('failed', true)->count(),
                     'avg_duration_ms' => (int) (clone $outgoing)->avg('duration_ms'),
+                    'status_buckets' => $this->statusBuckets(clone $outgoing),
                     'slowest' => (clone $outgoing)
                         ->orderByDesc('duration_ms')
                         ->limit(5)

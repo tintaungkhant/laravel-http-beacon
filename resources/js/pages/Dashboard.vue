@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { truncate } from '../utils.js'
+import { timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
@@ -25,6 +25,7 @@ const loading = ref(true)
 const error = ref(null)
 
 const buckets = computed(() => summary.value?.incoming.status_buckets ?? { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 })
+const outgoingBuckets = computed(() => summary.value?.outgoing.status_buckets ?? { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 })
 const rangeLabel = computed(() => RANGES.find((r) => r.value === range.value)?.label ?? '')
 
 function startOfDay(d) {
@@ -153,24 +154,48 @@ onMounted(load)
                 </div>
             </div>
 
-            <div class="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 class="text-sm font-semibold text-slate-900">Incoming Status Breakdown</h2>
-                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div class="rounded-md bg-emerald-50 px-3 py-3 ring-1 ring-inset ring-emerald-200">
-                        <p class="text-xs font-medium text-emerald-700">2xx</p>
-                        <p class="mt-1 text-xl font-semibold text-emerald-800">{{ buckets['2xx'].toLocaleString() }}</p>
+            <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                    <h2 class="text-sm font-semibold text-slate-900">Incoming Status Breakdown</h2>
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="rounded-md bg-emerald-50 px-3 py-3 ring-1 ring-inset ring-emerald-200">
+                            <p class="text-xs font-medium text-emerald-700">2xx</p>
+                            <p class="mt-1 text-xl font-semibold text-emerald-800">{{ buckets['2xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-blue-50 px-3 py-3 ring-1 ring-inset ring-blue-200">
+                            <p class="text-xs font-medium text-blue-700">3xx</p>
+                            <p class="mt-1 text-xl font-semibold text-blue-800">{{ buckets['3xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-amber-50 px-3 py-3 ring-1 ring-inset ring-amber-200">
+                            <p class="text-xs font-medium text-amber-700">4xx</p>
+                            <p class="mt-1 text-xl font-semibold text-amber-800">{{ buckets['4xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-rose-50 px-3 py-3 ring-1 ring-inset ring-rose-200">
+                            <p class="text-xs font-medium text-rose-700">5xx</p>
+                            <p class="mt-1 text-xl font-semibold text-rose-800">{{ buckets['5xx'].toLocaleString() }}</p>
+                        </div>
                     </div>
-                    <div class="rounded-md bg-blue-50 px-3 py-3 ring-1 ring-inset ring-blue-200">
-                        <p class="text-xs font-medium text-blue-700">3xx</p>
-                        <p class="mt-1 text-xl font-semibold text-blue-800">{{ buckets['3xx'].toLocaleString() }}</p>
-                    </div>
-                    <div class="rounded-md bg-amber-50 px-3 py-3 ring-1 ring-inset ring-amber-200">
-                        <p class="text-xs font-medium text-amber-700">4xx</p>
-                        <p class="mt-1 text-xl font-semibold text-amber-800">{{ buckets['4xx'].toLocaleString() }}</p>
-                    </div>
-                    <div class="rounded-md bg-rose-50 px-3 py-3 ring-1 ring-inset ring-rose-200">
-                        <p class="text-xs font-medium text-rose-700">5xx</p>
-                        <p class="mt-1 text-xl font-semibold text-rose-800">{{ buckets['5xx'].toLocaleString() }}</p>
+                </div>
+
+                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                    <h2 class="text-sm font-semibold text-slate-900">Outgoing Status Breakdown</h2>
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="rounded-md bg-emerald-50 px-3 py-3 ring-1 ring-inset ring-emerald-200">
+                            <p class="text-xs font-medium text-emerald-700">2xx</p>
+                            <p class="mt-1 text-xl font-semibold text-emerald-800">{{ outgoingBuckets['2xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-blue-50 px-3 py-3 ring-1 ring-inset ring-blue-200">
+                            <p class="text-xs font-medium text-blue-700">3xx</p>
+                            <p class="mt-1 text-xl font-semibold text-blue-800">{{ outgoingBuckets['3xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-amber-50 px-3 py-3 ring-1 ring-inset ring-amber-200">
+                            <p class="text-xs font-medium text-amber-700">4xx</p>
+                            <p class="mt-1 text-xl font-semibold text-amber-800">{{ outgoingBuckets['4xx'].toLocaleString() }}</p>
+                        </div>
+                        <div class="rounded-md bg-rose-50 px-3 py-3 ring-1 ring-inset ring-rose-200">
+                            <p class="text-xs font-medium text-rose-700">5xx</p>
+                            <p class="mt-1 text-xl font-semibold text-rose-800">{{ outgoingBuckets['5xx'].toLocaleString() }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -183,7 +208,7 @@ onMounted(load)
                     <table class="min-w-full divide-y divide-slate-200 text-sm">
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!summary.incoming.slowest.length">
-                                <td class="px-4 py-6 text-center text-slate-400" colspan="5">No data.</td>
+                                <td class="px-4 py-6 text-center text-slate-400" colspan="6">No data.</td>
                             </tr>
                             <tr
                                 v-for="row in summary.incoming.slowest"
@@ -196,6 +221,7 @@ onMounted(load)
                                 <td class="px-4 py-2.5 font-mono text-xs text-slate-700" :title="row.path">{{ truncate(row.path, 40) }}</td>
                                 <td class="whitespace-nowrap px-4 py-2.5"><StatusBadge :status="row.status" /></td>
                                 <td class="whitespace-nowrap px-4 py-2.5 text-right text-slate-500">{{ row.duration_ms }}ms</td>
+                                <td class="whitespace-nowrap px-4 py-2.5 text-right text-slate-500" :title="row.created_at">{{ timeAgo(row.created_at) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -208,7 +234,7 @@ onMounted(load)
                     <table class="min-w-full divide-y divide-slate-200 text-sm">
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!summary.outgoing.slowest.length">
-                                <td class="px-4 py-6 text-center text-slate-400" colspan="5">No data.</td>
+                                <td class="px-4 py-6 text-center text-slate-400" colspan="6">No data.</td>
                             </tr>
                             <tr
                                 v-for="row in summary.outgoing.slowest"
@@ -227,6 +253,7 @@ onMounted(load)
                                     <span v-if="row.duration_ms !== null">{{ row.duration_ms }}ms</span>
                                     <span v-else>—</span>
                                 </td>
+                                <td class="whitespace-nowrap px-4 py-2.5 text-right text-slate-500" :title="row.created_at">{{ timeAgo(row.created_at) }}</td>
                             </tr>
                         </tbody>
                     </table>

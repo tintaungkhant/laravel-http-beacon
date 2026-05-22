@@ -18,13 +18,9 @@ class IncomingRequestController extends Controller
         $query = IncomingRequest::query();
 
         $this->applyFilters($query, $request);
-
-        if ($beforeId = $request->query('before_id')) {
-            $query->where('id', '<', (int) $beforeId);
-        }
+        $this->applySort($query, $request);
 
         $rows = $query
-            ->orderByDesc('id')
             ->limit(50)
             ->get([
                 'id',
@@ -64,7 +60,7 @@ class IncomingRequestController extends Controller
     private function applyFilters(Builder $query, Request $request): void
     {
         if ($search = trim((string) $request->query('search', ''))) {
-            $query->where('path', 'like', '%'.$search.'%');
+            $query->where('path', 'like', $this->likePattern($search));
         }
 
         $method = strtoupper((string) $request->query('method', ''));
@@ -82,6 +78,64 @@ class IncomingRequestController extends Controller
 
         if ($to = $this->parseDate($request->query('to'))) {
             $query->where('created_at', '<=', $to);
+        }
+
+        $this->applyDurationFilter($query, $request);
+    }
+
+    private function applyDurationFilter(Builder $query, Request $request): void
+    {
+        $duration = $request->query('duration');
+
+        if ($duration === null || $duration === '' || ! is_numeric($duration)) {
+            return;
+        }
+
+        $operator = $request->query('duration_op') === 'lte' ? '<=' : '>=';
+
+        $query->where('duration_ms', $operator, (int) $duration);
+    }
+
+    /**
+     * Build a LIKE pattern. The search is always a substring (contains) match;
+     * a `*` inside the term is a user-facing wildcard mapped to SQL `%`, so a
+     * search of "star slash user" matches any path containing "/user".
+     */
+    private function likePattern(string $search): string
+    {
+        return '%'.str_replace('*', '%', $search).'%';
+    }
+
+    /**
+     * Sort + paginate the listing.
+     *
+     * Sorting by `id` keeps keyset pagination (`before_id` cursor). Sorting by
+     * `duration_ms` has no monotonic id cursor, so it falls back to offset
+     * pagination (`offset` param).
+     */
+    private function applySort(Builder $query, Request $request): void
+    {
+        [$column, $direction] = match ($request->query('sort')) {
+            'id_asc' => ['id', 'asc'],
+            'duration_desc' => ['duration_ms', 'desc'],
+            'duration_asc' => ['duration_ms', 'asc'],
+            default => ['id', 'desc'],
+        };
+
+        if ($column === 'id') {
+            if ($beforeId = $request->query('before_id')) {
+                $query->where('id', $direction === 'asc' ? '>' : '<', (int) $beforeId);
+            }
+
+            $query->orderBy('id', $direction);
+
+            return;
+        }
+
+        $query->orderBy($column, $direction)->orderByDesc('id');
+
+        if (($offset = (int) $request->query('offset', 0)) > 0) {
+            $query->offset($offset);
         }
     }
 
