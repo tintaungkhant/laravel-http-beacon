@@ -5,6 +5,8 @@ import IncomingList from './pages/IncomingList.vue'
 import IncomingDetail from './pages/IncomingDetail.vue'
 import OutgoingList from './pages/OutgoingList.vue'
 import OutgoingDetail from './pages/OutgoingDetail.vue'
+import SharedLinks from './pages/SharedLinks.vue'
+import SharedView from './pages/SharedView.vue'
 
 export const router = createRouter({
     history: createWebHistory('/beacon'),
@@ -15,5 +17,7 @@ export const router = createRouter({
         { path: '/incoming/:id', name: 'incoming.show', component: IncomingDetail, props: true },
         { path: '/outgoing', name: 'outgoing.index', component: OutgoingList },
         { path: '/outgoing/:id', name: 'outgoing.show', component: OutgoingDetail, props: true },
+        { path: '/shared-links', name: 'shared-links', component: SharedLinks },
+        { path: '/shared/:token', name: 'shared.view', component: SharedView, props: true, meta: { bare: true } },
     ],
 })

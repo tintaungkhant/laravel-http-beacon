@@ -54,6 +54,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Request Sharing
+    |--------------------------------------------------------------------------
+    |
+    | Lets developers create shareable links to individual captured requests,
+    | optionally protected by a password and/or an expiry. Shared links work
+    | for recipients who have no Beacon access. Set enabled to false to remove
+    | the share routes and hide the share UI entirely.
+    |
+    */
+
+    'sharing' => [
+        'enabled' => (bool) env('BEACON_SHARING_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Header & Parameter Redaction
     |--------------------------------------------------------------------------
     |

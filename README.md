@@ -23,6 +23,7 @@ It is intentionally narrower than [Laravel Telescope](https://github.com/laravel
 - **Sort lists** by id or duration, ascending or descending
 - **Auto-refresh** lists on a 5s interval with a live countdown (toggle remembered per list)
 - **Copy as cURL** — reconstruct any captured request as a `curl` command from its detail view
+- **Share a request** — generate a link to any captured request, with an optional password and expiry; revoke it anytime. Shared links open for recipients with no Beacon access
 - Keyset pagination (`?before_id=N`)
 - Pause / resume recording from the UI or via Artisan
 - Bulk delete from the UI
@@ -106,6 +107,12 @@ return [
     // Middleware applied to every Beacon route (dashboard view + JSON API).
     // Add an auth gate here, e.g. ['web', 'auth', 'can:viewBeacon'].
     'middleware' => ['web'],
+
+    // Request sharing — set enabled to false to remove the share routes and
+    // hide the share UI. Shared links are intentionally ungated.
+    'sharing' => [
+        'enabled' => (bool) env('BEACON_SHARING_ENABLED', true),
+    ],
 
     'redact' => (bool) env('BEACON_REDACT', true),
 
@@ -199,6 +206,26 @@ BEACON_ENABLED=false
 ```
 
 A built-in gate is on the roadmap.
+
+## Sharing Requests
+
+Any captured request can be shared from its detail view. Hit **Share**, pick an
+expiry (1 hour up to 30 days, or never) and an optional password, and Beacon
+returns a link.
+
+Shared links are deliberately **ungated** — they open for anyone who has the
+link, even without Beacon access — so the token, password, and expiry are the
+protection. Passwords are stored hashed; the shared view serves the same
+already-redacted data as the in-app detail. Manage and revoke every link from
+the **Shared** tab.
+
+Set `beacon.sharing.enabled` to `false` (or `BEACON_SHARING_ENABLED=false`) to
+remove the feature entirely. `beacon:clear` drops shared links along with the
+traffic; `beacon:prune` also clears revoked and expired links.
+
+> Sharing adds one migration (`beacon_shared_links`). After `composer update`,
+> run `php artisan vendor:publish --tag=beacon-migrations` (or `beacon:install`)
+> and `php artisan migrate`.
 
 ## Testing
 

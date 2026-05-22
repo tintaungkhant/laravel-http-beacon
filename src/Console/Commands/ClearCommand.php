@@ -4,6 +4,7 @@ namespace HttpBeacon\Console\Commands;
 
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\Models\SharedLink;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 
@@ -18,6 +19,7 @@ class ClearCommand extends Command
     {
         IncomingRequest::query()->delete();
         OutgoingRequest::query()->delete();
+        SharedLink::query()->delete();
 
         $this->info('Beacon entries cleared.');
 
