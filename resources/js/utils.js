@@ -27,7 +27,7 @@ function formatYmdHms(d, utc = false) {
     return `${year}-${pad2(month + 1)}-${pad2(day)} ${pad2(hour)}:${pad2(min)}:${pad2(sec)}`
 }
 
-function localTimezoneLabel() {
+export function localTimezoneLabel() {
     try {
         return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'
     } catch {
@@ -39,6 +39,16 @@ export function formatDateTimeLocal(date) {
     if (!date) return ''
     const d = new Date(date)
     return `${formatYmdHms(d, false)} (${localTimezoneLabel()})`
+}
+
+export function formatYmdHmsLocal(date) {
+    if (!date) return ''
+    return formatYmdHms(new Date(date), false)
+}
+
+export function formatYmdHmsUtc(date) {
+    if (!date) return ''
+    return formatYmdHms(new Date(date), true)
 }
 
 export function formatDateTimeUTC(date) {

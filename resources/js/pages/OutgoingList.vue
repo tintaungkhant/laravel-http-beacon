@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
-import { localToUtcIso, timeAgo, truncate } from '../utils.js'
+import { formatYmdHmsLocal, formatYmdHmsUtc, localTimezoneLabel, localToUtcIso, timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
@@ -11,6 +11,8 @@ const METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEA
 
 const route = useRoute()
 const router = useRouter()
+
+const tz = localTimezoneLabel()
 
 const filters = reactive({
     search: route.query.search ?? '',
@@ -243,18 +245,20 @@ onMounted(() => {
                         <th class="px-4 py-3 text-center">Status</th>
                         <th class="px-4 py-3 text-right">Duration</th>
                         <th class="px-4 py-3">Happened</th>
+                        <th class="px-4 py-3">Created (UTC)</th>
+                        <th class="px-4 py-3">Created ({{ tz }})</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <tr v-if="loading">
-                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">Loading…</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-slate-500">Loading…</td>
                     </tr>
                     <tr v-else-if="error">
-                        <td colspan="7" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-rose-600">{{ error }}</td>
                     </tr>
                     <tr v-else-if="rows.length === 0">
-                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">
+                        <td colspan="9" class="px-4 py-10 text-center text-slate-500">
                             {{ hasActiveFilters ? 'No requests match the current filters.' : 'No outgoing requests recorded yet.' }}
                         </td>
                     </tr>
@@ -278,6 +282,8 @@ onMounted(() => {
                             <span v-else>—</span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-slate-500" :title="row.created_at">{{ timeAgo(row.created_at) }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsUtc(row.created_at) }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">{{ formatYmdHmsLocal(row.created_at) }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-right text-indigo-600">View</td>
                     </tr>
                 </tbody>
