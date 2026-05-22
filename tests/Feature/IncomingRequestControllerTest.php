@@ -89,6 +89,37 @@ class IncomingRequestControllerTest extends TestCase
         $invalid->assertJsonCount(3, 'data');
     }
 
+    public function test_search_supports_star_wildcard(): void
+    {
+        $chatSend = $this->makeIncoming(['path' => '/api/chat/send']);
+        $chatList = $this->makeIncoming(['path' => '/v2/chat/list']);
+        $users = $this->makeIncoming(['path' => '/api/users']);
+
+        $wildcard = $this->getJson('/beacon/api/incoming-requests?search='.urlencode('*/chat/*'));
+        $wildcard->assertOk();
+        $this->assertEqualsCanonicalizing(
+            [$chatSend->id, $chatList->id],
+            array_column($wildcard->json('data'), 'id'),
+        );
+
+        $prefix = $this->getJson('/beacon/api/incoming-requests?search='.urlencode('/api/*'));
+        $this->assertEqualsCanonicalizing(
+            [$chatSend->id, $users->id],
+            array_column($prefix->json('data'), 'id'),
+        );
+
+        $plain = $this->getJson('/beacon/api/incoming-requests?search=chat');
+        $plain->assertJsonCount(2, 'data');
+
+        // A wildcard term stays a substring match: "*/chat" still matches
+        // "/api/chat/send" even though that path does not end with "/chat".
+        $unanchored = $this->getJson('/beacon/api/incoming-requests?search='.urlencode('*/chat'));
+        $this->assertEqualsCanonicalizing(
+            [$chatSend->id, $chatList->id],
+            array_column($unanchored->json('data'), 'id'),
+        );
+    }
+
     public function test_show_returns_request_with_relations(): void
     {
         $incoming = $this->makeIncoming();

@@ -35,6 +35,26 @@ class OutgoingRequestControllerTest extends TestCase
         }
     }
 
+    public function test_search_supports_star_wildcard(): void
+    {
+        $chat = $this->makeOutgoing(['hostname' => 'api.example.com', 'uri' => 'https://api.example.com/chat/send']);
+        $users = $this->makeOutgoing(['hostname' => 'api.example.com', 'uri' => 'https://api.example.com/users']);
+        $stripe = $this->makeOutgoing(['hostname' => 'api.stripe.com', 'uri' => 'https://api.stripe.com/charges']);
+
+        $wildcard = $this->getJson('/beacon/api/outgoing-requests?search='.urlencode('*/chat/*'));
+        $wildcard->assertOk();
+        $this->assertEqualsCanonicalizing([$chat->id], array_column($wildcard->json('data'), 'id'));
+
+        $hostWildcard = $this->getJson('/beacon/api/outgoing-requests?search='.urlencode('api.*.com'));
+        $this->assertEqualsCanonicalizing(
+            [$chat->id, $users->id, $stripe->id],
+            array_column($hostWildcard->json('data'), 'id'),
+        );
+
+        $plain = $this->getJson('/beacon/api/outgoing-requests?search=stripe');
+        $plain->assertJsonCount(1, 'data');
+    }
+
     public function test_filters_by_duration(): void
     {
         $fast = $this->makeOutgoing(['duration_ms' => 10]);

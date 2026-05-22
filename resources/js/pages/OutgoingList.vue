@@ -212,7 +212,8 @@ onMounted(() => {
                 <input
                     v-model="filters.search"
                     type="text"
-                    placeholder="Search host or URI…"
+                    placeholder="Search host or URI… (* = wildcard)"
+                    title="Use * as a wildcard, e.g. */chat/*"
                     class="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     @keyup.enter="runSearch"
                 />

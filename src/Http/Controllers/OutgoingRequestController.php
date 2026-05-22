@@ -54,9 +54,11 @@ class OutgoingRequestController extends Controller
     private function applyFilters(Builder $query, Request $request): void
     {
         if ($search = trim((string) $request->query('search', ''))) {
-            $query->where(function (Builder $q) use ($search) {
-                $q->where('uri', 'like', '%'.$search.'%')
-                    ->orWhere('hostname', 'like', '%'.$search.'%');
+            $pattern = $this->likePattern($search);
+
+            $query->where(function (Builder $q) use ($pattern) {
+                $q->where('uri', 'like', $pattern)
+                    ->orWhere('hostname', 'like', $pattern);
             });
         }
 
@@ -93,6 +95,16 @@ class OutgoingRequestController extends Controller
         $operator = $request->query('duration_op') === 'lte' ? '<=' : '>=';
 
         $query->where('duration_ms', $operator, (int) $duration);
+    }
+
+    /**
+     * Build a LIKE pattern. The search is always a substring (contains) match;
+     * a `*` inside the term is a user-facing wildcard mapped to SQL `%`, so a
+     * search of "star slash user" matches any URI containing "/user".
+     */
+    private function likePattern(string $search): string
+    {
+        return '%'.str_replace('*', '%', $search).'%';
     }
 
     /**

@@ -60,7 +60,7 @@ class IncomingRequestController extends Controller
     private function applyFilters(Builder $query, Request $request): void
     {
         if ($search = trim((string) $request->query('search', ''))) {
-            $query->where('path', 'like', '%'.$search.'%');
+            $query->where('path', 'like', $this->likePattern($search));
         }
 
         $method = strtoupper((string) $request->query('method', ''));
@@ -94,6 +94,16 @@ class IncomingRequestController extends Controller
         $operator = $request->query('duration_op') === 'lte' ? '<=' : '>=';
 
         $query->where('duration_ms', $operator, (int) $duration);
+    }
+
+    /**
+     * Build a LIKE pattern. The search is always a substring (contains) match;
+     * a `*` inside the term is a user-facing wildcard mapped to SQL `%`, so a
+     * search of "star slash user" matches any path containing "/user".
+     */
+    private function likePattern(string $search): string
+    {
+        return '%'.str_replace('*', '%', $search).'%';
     }
 
     /**
