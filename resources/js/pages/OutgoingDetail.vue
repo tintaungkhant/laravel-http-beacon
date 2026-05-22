@@ -6,6 +6,7 @@ import { formatDateTimeLocal, formatDateTimeUTC, localTimezoneLabel, timeAgo } f
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import JsonViewer from '../components/JsonViewer.vue'
+import CopyCurlButton from '../components/CopyCurlButton.vue'
 
 const props = defineProps({ id: { type: [String, Number], required: true } })
 
@@ -41,7 +42,10 @@ onMounted(load)
         <div v-else-if="error" class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">{{ error }}</div>
 
         <template v-else-if="entry">
-            <h1 class="mb-4 text-xl font-semibold text-slate-900">Outgoing Request Details</h1>
+            <div class="mb-4 flex items-center justify-between">
+                <h1 class="text-xl font-semibold text-slate-900">Outgoing Request Details</h1>
+                <CopyCurlButton :entry="entry" />
+            </div>
 
             <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">

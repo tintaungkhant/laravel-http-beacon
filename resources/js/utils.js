@@ -101,3 +101,60 @@ export function formatJson(value) {
         return String(value)
     }
 }
+
+function shellQuote(value) {
+    return `'${String(value).replace(/'/g, `'\\''`)}'`
+}
+
+/**
+ * Reconstruct a `curl` command from a logged request entry.
+ * Works for both incoming (path + hostname) and outgoing (full uri) entries.
+ * Redacted headers/params keep their mask — secrets are never exposed.
+ */
+export function requestToCurl(entry) {
+    if (!entry) return ''
+
+    const method = (entry.method || 'GET').toUpperCase()
+    const url = entry.uri || `https://${entry.hostname || ''}${entry.path || ''}`
+
+    const parts = [`curl -X ${method} ${shellQuote(url)}`]
+
+    const headers = entry.request_headers || {}
+    for (const [name, value] of Object.entries(headers)) {
+        parts.push(`-H ${shellQuote(`${name}: ${value}`)}`)
+    }
+
+    const body = entry.payload
+    const hasBody = typeof body === 'string'
+        ? body.length > 0
+        : body && typeof body === 'object' && Object.keys(body).length > 0
+    if (hasBody) {
+        const data = typeof body === 'string' ? body : JSON.stringify(body)
+        parts.push(`--data ${shellQuote(data)}`)
+    }
+
+    return parts.join(' \\\n  ')
+}
+
+/** Copy text to the clipboard, with a fallback for non-secure contexts. */
+export async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text)
+        return true
+    } catch {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        let ok = false
+        try {
+            ok = document.execCommand('copy')
+        } catch {
+            ok = false
+        }
+        document.body.removeChild(ta)
+        return ok
+    }
+}
