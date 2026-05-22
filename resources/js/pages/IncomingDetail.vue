@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { api } from '../api.js'
 import IncomingRequestDetail from '../components/IncomingRequestDetail.vue'
 import CopyCurlButton from '../components/CopyCurlButton.vue'
@@ -8,7 +7,6 @@ import ShareButton from '../components/ShareButton.vue'
 
 const props = defineProps({ id: { type: [String, Number], required: true } })
 
-const router = useRouter()
 const entry = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -30,8 +28,6 @@ onMounted(load)
 
 <template>
     <div>
-        <button type="button" class="mb-4 text-sm text-slate-500 hover:text-slate-800" @click="router.back()">← Back</button>
-
         <div v-if="loading" class="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-500">Loading…</div>
         <div v-else-if="error" class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">{{ error }}</div>
 

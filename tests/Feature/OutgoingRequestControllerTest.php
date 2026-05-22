@@ -103,6 +103,18 @@ class OutgoingRequestControllerTest extends TestCase
         $this->assertSame([$mid->id, $fast->id], array_column($offset->json('data'), 'id'));
     }
 
+    public function test_after_id_returns_only_rows_newer_than_the_cursor(): void
+    {
+        $this->makeOutgoing();
+        $b = $this->makeOutgoing();
+        $c = $this->makeOutgoing();
+
+        $response = $this->getJson('/beacon/api/outgoing-requests?after_id='.$b->id);
+
+        $response->assertOk();
+        $this->assertSame([$c->id], array_column($response->json('data'), 'id'));
+    }
+
     public function test_destroy_clears_all_rows(): void
     {
         $this->makeOutgoing();

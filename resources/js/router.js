@@ -10,6 +10,10 @@ import SharedView from './pages/SharedView.vue'
 
 export const router = createRouter({
     history: createWebHistory('/beacon'),
+    // Restore the previous scroll position on back/forward; top on a fresh nav.
+    scrollBehavior(to, from, savedPosition) {
+        return savedPosition ?? { top: 0 }
+    },
     routes: [
         { path: '/', redirect: '/dashboard' },
         { path: '/dashboard', name: 'dashboard', component: Dashboard },

@@ -7,6 +7,9 @@ import { formatYmdHmsLocal, formatYmdHmsUtc, localTimezoneLabel, localToUtcIso, 
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 
+// Explicit name so <KeepAlive :include> in App.vue matches this component.
+defineOptions({ name: 'OutgoingList' })
+
 const PAGE_SIZE = 50
 const METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
 const SORT_OPTIONS = [
@@ -81,8 +84,25 @@ async function load(quiet = false) {
     }
 }
 
+// Auto-refresh as a live tail: pull only rows newer than the top one and
+// prepend them, so loaded pages and scroll position survive. This is correct
+// only for the default newest-first sort — rows[0] is then the global newest,
+// so `after_id` returns genuine new arrivals. Other sorts fall back to a full
+// reload.
+async function refreshNew() {
+    if (filters.sort !== DEFAULT_SORT || rows.value.length === 0) {
+        return load(true)
+    }
+    try {
+        const fresh = await api.outgoing.list({ ...activeParams(), after_id: rows.value[0].id })
+        if (fresh.length) rows.value = [...fresh, ...rows.value]
+    } catch (e) {
+        error.value = e.message
+    }
+}
+
 const { autoRefresh, countdown, refreshing, toggleAutoRefresh } = useAutoRefresh(
-    () => load(true),
+    refreshNew,
     'beacon.auto-refresh.outgoing',
 )
 
