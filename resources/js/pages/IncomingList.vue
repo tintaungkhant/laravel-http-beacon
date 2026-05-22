@@ -51,8 +51,6 @@ const recording = ref(true)
 const togglingRecording = ref(false)
 const clearing = ref(false)
 
-let filterTimer = null
-
 function activeParams() {
     return {
         search: filters.search || undefined,
@@ -98,6 +96,22 @@ async function loadMore() {
     }
 }
 
+function runSearch() {
+    const query = {}
+    if (filters.search) query.search = filters.search
+    if (filters.method) query.method = filters.method
+    if (filters.status) query.status = filters.status
+    if (filters.from) query.from = filters.from
+    if (filters.to) query.to = filters.to
+    if (filters.duration) {
+        query.duration = filters.duration
+        query.duration_op = filters.durationOp
+    }
+    if (filters.sort !== DEFAULT_SORT) query.sort = filters.sort
+    router.replace({ query })
+    load()
+}
+
 function clearFilters() {
     filters.search = ''
     filters.method = ''
@@ -106,6 +120,7 @@ function clearFilters() {
     filters.to = ''
     filters.durationOp = 'gte'
     filters.duration = ''
+    runSearch()
 }
 
 async function loadRecording() {
@@ -144,24 +159,8 @@ async function clearAll() {
     }
 }
 
-watch(filters, () => {
-    if (filterTimer) clearTimeout(filterTimer)
-    filterTimer = setTimeout(() => {
-        const query = {}
-        if (filters.search) query.search = filters.search
-        if (filters.method) query.method = filters.method
-        if (filters.status) query.status = filters.status
-        if (filters.from) query.from = filters.from
-        if (filters.to) query.to = filters.to
-        if (filters.duration) {
-            query.duration = filters.duration
-            query.duration_op = filters.durationOp
-        }
-        if (filters.sort !== DEFAULT_SORT) query.sort = filters.sort
-        router.replace({ query })
-        load()
-    }, 250)
-})
+// Sort applies instantly; text/filter inputs wait for the Search button.
+watch(() => filters.sort, runSearch)
 
 onMounted(() => {
     load()
@@ -204,76 +203,90 @@ onMounted(() => {
             </div>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
-            <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Search path…"
-                class="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <select
-                v-model="filters.method"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-                <option value="">All methods</option>
-                <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
-            </select>
-            <select
-                v-model="filters.status"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-                <option value="">All status</option>
-                <option value="2xx">2xx Success</option>
-                <option value="3xx">3xx Redirect</option>
-                <option value="4xx">4xx Client Error</option>
-                <option value="5xx">5xx Server Error</option>
-            </select>
-            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                From
+        <div class="mb-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <input
-                    v-model="filters.from"
-                    type="datetime-local"
-                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    v-model="filters.search"
+                    type="text"
+                    placeholder="Search path…"
+                    class="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    @keyup.enter="runSearch"
                 />
-            </label>
-            <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                To
-                <input
-                    v-model="filters.to"
-                    type="datetime-local"
-                    class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-            </label>
-            <div class="inline-flex items-center">
                 <select
-                    v-model="filters.durationOp"
-                    class="rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    v-model="filters.method"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
-                    <option v-for="op in DURATION_OPS" :key="op.value" :value="op.value">{{ op.label }}</option>
+                    <option value="">All methods</option>
+                    <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
                 </select>
-                <input
-                    v-model="filters.duration"
-                    type="number"
-                    min="0"
-                    placeholder="ms"
-                    class="-ml-px w-24 rounded-r-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
+                <select
+                    v-model="filters.status"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option value="">All status</option>
+                    <option value="2xx">2xx Success</option>
+                    <option value="3xx">3xx Redirect</option>
+                    <option value="4xx">4xx Client Error</option>
+                    <option value="5xx">5xx Server Error</option>
+                </select>
+                <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                    From
+                    <input
+                        v-model="filters.from"
+                        type="datetime-local"
+                        class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                </label>
+                <label class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                    To
+                    <input
+                        v-model="filters.to"
+                        type="datetime-local"
+                        class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                </label>
+                <div class="inline-flex items-center">
+                    <select
+                        v-model="filters.durationOp"
+                        class="h-[34px] rounded-l-md border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                        <option v-for="op in DURATION_OPS" :key="op.value" :value="op.value">{{ op.label }}</option>
+                    </select>
+                    <input
+                        v-model="filters.duration"
+                        type="number"
+                        min="0"
+                        placeholder="ms"
+                        class="-ml-px h-[34px] w-24 rounded-r-md border border-slate-300 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        @keyup.enter="runSearch"
+                    />
+                </div>
+                <button
+                    type="button"
+                    class="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+                    @click="runSearch"
+                >
+                    Search
+                </button>
+                <button
+                    v-if="hasActiveFilters"
+                    type="button"
+                    class="text-sm font-medium text-slate-500 hover:text-slate-800"
+                    @click="clearFilters"
+                >
+                    Clear
+                </button>
             </div>
-            <button
-                v-if="hasActiveFilters"
-                type="button"
-                class="text-sm font-medium text-slate-500 hover:text-slate-800"
-                @click="clearFilters"
-            >
-                Clear
-            </button>
 
-            <select
-                v-model="filters.sort"
-                class="ml-auto rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
+            <div class="flex items-center justify-end gap-1.5">
+                <span class="text-sm text-slate-500">Sort</span>
+                <select
+                    v-model="filters.sort"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
