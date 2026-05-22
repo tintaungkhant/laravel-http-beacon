@@ -4,6 +4,21 @@ A lightweight, HTTP-focused observability package for Laravel. Beacon records ev
 
 It is intentionally narrower than [Laravel Telescope](https://github.com/laravel/telescope) — only the parts most teams care about in production: HTTP traffic and the work that traffic kicked off.
 
+## Contents
+
+- [Why Beacon?](#why-beacon)
+- [Features](#features)
+- [Beacon vs Telescope](#beacon-vs-telescope)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Artisan Commands](#artisan-commands)
+- [Authentication](#authentication)
+- [Sharing Requests](#sharing-requests)
+- [Testing](#testing)
+- [Screenshots](#screenshots)
+- [License](#license)
+
 ## Why Beacon?
 
 - **HTTP-first.** No watchers for things you rarely need in production (mail, cache, redis, views, dumps, ...). Just requests in, requests out, and what they did.
