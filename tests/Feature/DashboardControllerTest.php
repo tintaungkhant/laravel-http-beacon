@@ -38,5 +38,9 @@ class DashboardControllerTest extends TestCase
 
         $this->assertSame(2, $response->json('data.outgoing.total'));
         $this->assertSame(1, $response->json('data.outgoing.failed'));
+
+        // Outgoing status breakdown: one 2xx, the failed row has no status.
+        $this->assertSame(1, $response->json('data.outgoing.status_buckets.2xx'));
+        $this->assertSame(0, $response->json('data.outgoing.status_buckets.5xx'));
     }
 }

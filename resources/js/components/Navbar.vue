@@ -5,10 +5,10 @@ import { RouterLink } from 'vue-router'
 <template>
     <header class="sticky top-0 z-20 border-b border-slate-200 bg-white">
         <div class="flex h-16 items-center gap-6 px-8">
-            <div class="flex items-center gap-3">
+            <RouterLink to="/dashboard" class="flex items-center gap-3">
                 <div class="flex size-8 items-center justify-center rounded-md bg-indigo-600 font-bold text-white">B</div>
                 <span class="text-base font-semibold text-slate-900">Beacon</span>
-            </div>
+            </RouterLink>
 
             <nav class="flex items-center gap-1">
                 <RouterLink
