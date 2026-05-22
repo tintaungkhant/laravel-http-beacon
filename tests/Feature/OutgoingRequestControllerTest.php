@@ -35,6 +35,23 @@ class OutgoingRequestControllerTest extends TestCase
         }
     }
 
+    public function test_filters_by_duration(): void
+    {
+        $fast = $this->makeOutgoing(['duration_ms' => 10]);
+        $mid = $this->makeOutgoing(['duration_ms' => 200]);
+        $slow = $this->makeOutgoing(['duration_ms' => 900]);
+
+        $gte = $this->getJson('/beacon/api/outgoing-requests?duration=200&duration_op=gte');
+        $gte->assertOk();
+        $this->assertEqualsCanonicalizing([$mid->id, $slow->id], array_column($gte->json('data'), 'id'));
+
+        $lte = $this->getJson('/beacon/api/outgoing-requests?duration=200&duration_op=lte');
+        $this->assertEqualsCanonicalizing([$fast->id, $mid->id], array_column($lte->json('data'), 'id'));
+
+        $invalid = $this->getJson('/beacon/api/outgoing-requests?duration=abc');
+        $invalid->assertJsonCount(3, 'data');
+    }
+
     public function test_sort_by_id_ascending_uses_forward_keyset(): void
     {
         $a = $this->makeOutgoing();

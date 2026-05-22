@@ -78,6 +78,21 @@ class OutgoingRequestController extends Controller
         if ($to = $this->parseDate($request->query('to'))) {
             $query->where('created_at', '<=', $to);
         }
+
+        $this->applyDurationFilter($query, $request);
+    }
+
+    private function applyDurationFilter(Builder $query, Request $request): void
+    {
+        $duration = $request->query('duration');
+
+        if ($duration === null || $duration === '' || ! is_numeric($duration)) {
+            return;
+        }
+
+        $operator = $request->query('duration_op') === 'lte' ? '<=' : '>=';
+
+        $query->where('duration_ms', $operator, (int) $duration);
     }
 
     /**

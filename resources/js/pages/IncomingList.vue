@@ -15,6 +15,10 @@ const SORT_OPTIONS = [
     { value: 'duration_asc', label: 'Duration — fastest first' },
 ]
 const DEFAULT_SORT = 'id_desc'
+const DURATION_OPS = [
+    { value: 'gte', label: 'Duration ≥' },
+    { value: 'lte', label: 'Duration ≤' },
+]
 
 const route = useRoute()
 const router = useRouter()
@@ -27,11 +31,13 @@ const filters = reactive({
     status: route.query.status ?? '',
     from: route.query.from ?? '',
     to: route.query.to ?? '',
+    durationOp: route.query.duration_op ?? 'gte',
+    duration: route.query.duration ?? '',
     sort: route.query.sort ?? DEFAULT_SORT,
 })
 
 const hasActiveFilters = computed(() =>
-    filters.search || filters.method || filters.status || filters.from || filters.to,
+    filters.search || filters.method || filters.status || filters.from || filters.to || filters.duration,
 )
 
 const isOffsetSort = computed(() => filters.sort.startsWith('duration'))
@@ -54,6 +60,8 @@ function activeParams() {
         status: filters.status || undefined,
         from: localToUtcIso(filters.from),
         to: localToUtcIso(filters.to),
+        duration: filters.duration || undefined,
+        duration_op: filters.duration ? filters.durationOp : undefined,
         sort: filters.sort,
     }
 }
@@ -96,6 +104,8 @@ function clearFilters() {
     filters.status = ''
     filters.from = ''
     filters.to = ''
+    filters.durationOp = 'gte'
+    filters.duration = ''
 }
 
 async function loadRecording() {
@@ -143,6 +153,10 @@ watch(filters, () => {
         if (filters.status) query.status = filters.status
         if (filters.from) query.from = filters.from
         if (filters.to) query.to = filters.to
+        if (filters.duration) {
+            query.duration = filters.duration
+            query.duration_op = filters.durationOp
+        }
         if (filters.sort !== DEFAULT_SORT) query.sort = filters.sort
         router.replace({ query })
         load()
@@ -230,6 +244,21 @@ onMounted(() => {
                     class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
             </label>
+            <div class="inline-flex items-center">
+                <select
+                    v-model="filters.durationOp"
+                    class="rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                    <option v-for="op in DURATION_OPS" :key="op.value" :value="op.value">{{ op.label }}</option>
+                </select>
+                <input
+                    v-model="filters.duration"
+                    type="number"
+                    min="0"
+                    placeholder="ms"
+                    class="-ml-px w-24 rounded-r-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+            </div>
             <button
                 v-if="hasActiveFilters"
                 type="button"

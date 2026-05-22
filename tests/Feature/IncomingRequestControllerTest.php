@@ -72,6 +72,23 @@ class IncomingRequestControllerTest extends TestCase
         $this->getJson("/beacon/api/incoming-requests?from={$from}")->assertJsonCount(3, 'data');
     }
 
+    public function test_filters_by_duration(): void
+    {
+        $fast = $this->makeIncoming(['duration_ms' => 10]);
+        $mid = $this->makeIncoming(['duration_ms' => 200]);
+        $slow = $this->makeIncoming(['duration_ms' => 900]);
+
+        $gte = $this->getJson('/beacon/api/incoming-requests?duration=200&duration_op=gte');
+        $gte->assertOk();
+        $this->assertEqualsCanonicalizing([$mid->id, $slow->id], array_column($gte->json('data'), 'id'));
+
+        $lte = $this->getJson('/beacon/api/incoming-requests?duration=200&duration_op=lte');
+        $this->assertEqualsCanonicalizing([$fast->id, $mid->id], array_column($lte->json('data'), 'id'));
+
+        $invalid = $this->getJson('/beacon/api/incoming-requests?duration=abc');
+        $invalid->assertJsonCount(3, 'data');
+    }
+
     public function test_show_returns_request_with_relations(): void
     {
         $incoming = $this->makeIncoming();
