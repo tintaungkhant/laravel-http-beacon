@@ -35,6 +35,37 @@ class OutgoingRequestControllerTest extends TestCase
         }
     }
 
+    public function test_sort_by_id_ascending_uses_forward_keyset(): void
+    {
+        $a = $this->makeOutgoing();
+        $b = $this->makeOutgoing();
+        $c = $this->makeOutgoing();
+
+        $res = $this->getJson('/beacon/api/outgoing-requests?sort=id_asc');
+        $res->assertOk();
+        $this->assertSame([$a->id, $b->id, $c->id], array_column($res->json('data'), 'id'));
+
+        $page2 = $this->getJson("/beacon/api/outgoing-requests?sort=id_asc&before_id={$a->id}");
+        $this->assertSame([$b->id, $c->id], array_column($page2->json('data'), 'id'));
+    }
+
+    public function test_sort_by_duration_uses_offset_pagination(): void
+    {
+        $slow = $this->makeOutgoing(['duration_ms' => 900]);
+        $mid = $this->makeOutgoing(['duration_ms' => 300]);
+        $fast = $this->makeOutgoing(['duration_ms' => 10]);
+
+        $desc = $this->getJson('/beacon/api/outgoing-requests?sort=duration_desc');
+        $desc->assertOk();
+        $this->assertSame([$slow->id, $mid->id, $fast->id], array_column($desc->json('data'), 'id'));
+
+        $asc = $this->getJson('/beacon/api/outgoing-requests?sort=duration_asc');
+        $this->assertSame([$fast->id, $mid->id, $slow->id], array_column($asc->json('data'), 'id'));
+
+        $offset = $this->getJson('/beacon/api/outgoing-requests?sort=duration_desc&offset=1');
+        $this->assertSame([$mid->id, $fast->id], array_column($offset->json('data'), 'id'));
+    }
+
     public function test_destroy_clears_all_rows(): void
     {
         $this->makeOutgoing();

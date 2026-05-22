@@ -18,13 +18,9 @@ class OutgoingRequestController extends Controller
         $query = OutgoingRequest::query();
 
         $this->applyFilters($query, $request);
-
-        if ($beforeId = $request->query('before_id')) {
-            $query->where('id', '<', (int) $beforeId);
-        }
+        $this->applySort($query, $request);
 
         $rows = $query
-            ->orderByDesc('id')
             ->limit(50)
             ->get([
                 'id',
@@ -81,6 +77,39 @@ class OutgoingRequestController extends Controller
 
         if ($to = $this->parseDate($request->query('to'))) {
             $query->where('created_at', '<=', $to);
+        }
+    }
+
+    /**
+     * Sort + paginate the listing.
+     *
+     * Sorting by `id` keeps keyset pagination (`before_id` cursor). Sorting by
+     * `duration_ms` has no monotonic id cursor, so it falls back to offset
+     * pagination (`offset` param).
+     */
+    private function applySort(Builder $query, Request $request): void
+    {
+        [$column, $direction] = match ($request->query('sort')) {
+            'id_asc' => ['id', 'asc'],
+            'duration_desc' => ['duration_ms', 'desc'],
+            'duration_asc' => ['duration_ms', 'asc'],
+            default => ['id', 'desc'],
+        };
+
+        if ($column === 'id') {
+            if ($beforeId = $request->query('before_id')) {
+                $query->where('id', $direction === 'asc' ? '>' : '<', (int) $beforeId);
+            }
+
+            $query->orderBy('id', $direction);
+
+            return;
+        }
+
+        $query->orderBy($column, $direction)->orderByDesc('id');
+
+        if (($offset = (int) $request->query('offset', 0)) > 0) {
+            $query->offset($offset);
         }
     }
 

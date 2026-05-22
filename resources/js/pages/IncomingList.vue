@@ -8,6 +8,13 @@ import StatusBadge from '../components/StatusBadge.vue'
 
 const PAGE_SIZE = 50
 const METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
+const SORT_OPTIONS = [
+    { value: 'id_desc', label: 'ID — newest first' },
+    { value: 'id_asc', label: 'ID — oldest first' },
+    { value: 'duration_desc', label: 'Duration — slowest first' },
+    { value: 'duration_asc', label: 'Duration — fastest first' },
+]
+const DEFAULT_SORT = 'id_desc'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,11 +27,14 @@ const filters = reactive({
     status: route.query.status ?? '',
     from: route.query.from ?? '',
     to: route.query.to ?? '',
+    sort: route.query.sort ?? DEFAULT_SORT,
 })
 
 const hasActiveFilters = computed(() =>
     filters.search || filters.method || filters.status || filters.from || filters.to,
 )
+
+const isOffsetSort = computed(() => filters.sort.startsWith('duration'))
 
 const rows = ref([])
 const loading = ref(true)
@@ -44,6 +54,7 @@ function activeParams() {
         status: filters.status || undefined,
         from: localToUtcIso(filters.from),
         to: localToUtcIso(filters.to),
+        sort: filters.sort,
     }
 }
 
@@ -66,8 +77,10 @@ async function loadMore() {
     loadingMore.value = true
     error.value = null
     try {
-        const lastId = rows.value[rows.value.length - 1].id
-        const page = await api.incoming.list({ ...activeParams(), before_id: lastId })
+        const cursor = isOffsetSort.value
+            ? { offset: rows.value.length }
+            : { before_id: rows.value[rows.value.length - 1].id }
+        const page = await api.incoming.list({ ...activeParams(), ...cursor })
         rows.value.push(...page)
         hasMore.value = page.length === PAGE_SIZE
     } catch (e) {
@@ -130,6 +143,7 @@ watch(filters, () => {
         if (filters.status) query.status = filters.status
         if (filters.from) query.from = filters.from
         if (filters.to) query.to = filters.to
+        if (filters.sort !== DEFAULT_SORT) query.sort = filters.sort
         router.replace({ query })
         load()
     }, 250)
@@ -224,6 +238,13 @@ onMounted(() => {
             >
                 Clear
             </button>
+
+            <select
+                v-model="filters.sort"
+                class="ml-auto rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
