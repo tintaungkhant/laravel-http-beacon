@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api.js'
+import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { formatYmdHmsLocal, formatYmdHmsUtc, localTimezoneLabel, localToUtcIso, timeAgo, truncate } from '../utils.js'
 import MethodBadge from '../components/MethodBadge.vue'
 import StatusBadge from '../components/StatusBadge.vue'
@@ -66,8 +67,8 @@ function activeParams() {
     }
 }
 
-async function load() {
-    loading.value = true
+async function load(quiet = false) {
+    if (!quiet) loading.value = true
     error.value = null
     try {
         const page = await api.outgoing.list(activeParams())
@@ -76,9 +77,14 @@ async function load() {
     } catch (e) {
         error.value = e.message
     } finally {
-        loading.value = false
+        if (!quiet) loading.value = false
     }
 }
+
+const { autoRefresh, countdown, refreshing, toggleAutoRefresh } = useAutoRefresh(
+    () => load(true),
+    'beacon.auto-refresh.outgoing',
+)
 
 async function loadMore() {
     if (loadingMore.value || !rows.value.length) return
@@ -191,10 +197,26 @@ onMounted(() => {
                 <button
                     type="button"
                     class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    @click="load"
+                    @click="load()"
                 >
                     Refresh
                 </button>
+
+                <div class="inline-flex items-center gap-2">
+                    <button
+                        type="button"
+                        class="rounded-md border px-3 py-1.5 text-sm font-medium"
+                        :class="autoRefresh
+                            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'"
+                        @click="toggleAutoRefresh"
+                    >
+                        {{ autoRefresh ? 'Stop auto refresh' : 'Auto refresh' }}
+                    </button>
+                    <span v-if="autoRefresh" class="text-sm tabular-nums text-slate-500">
+                        {{ refreshing ? 'Refreshing…' : `Refresh in ${countdown}s` }}
+                    </span>
+                </div>
 
                 <button
                     type="button"
