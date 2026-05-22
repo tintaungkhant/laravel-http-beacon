@@ -18,7 +18,11 @@ It is intentionally narrower than [Laravel Telescope](https://github.com/laravel
 - Per-request rollups: queries (with bindings), model touches (with diff), dispatched jobs (with payload)
 - Caller stack capture for queries, models, jobs, **and outgoing HTTP calls** — `Class@method:line`
 - Header and parameter redaction (case-insensitive headers, dot/wildcard parameter paths)
-- Search + method + status-range + date-range + failed-only filters (date range is timezone-aware — browser local → UTC)
+- Search + method + status-range + date-range + duration + failed-only filters (date range is timezone-aware — browser local → UTC)
+- **Wildcard search** — use `*` in the search term, e.g. `*/chat/*`
+- **Sort lists** by id or duration, ascending or descending
+- **Auto-refresh** lists on a 5s interval with a live countdown (toggle remembered per list)
+- **Copy as cURL** — reconstruct any captured request as a `curl` command from its detail view
 - Keyset pagination (`?before_id=N`)
 - Pause / resume recording from the UI or via Artisan
 - Bulk delete from the UI
@@ -26,7 +30,8 @@ It is intentionally narrower than [Laravel Telescope](https://github.com/laravel
 - **Hard row caps** (`incoming.max_rows` / `outgoing.max_rows`) — oldest entries auto-trim FIFO with concurrency-safe locking
 - **Configurable route middleware** — drop in your own auth gate via `beacon.middleware`
 - Configurable sampling rate, body size limits, ignored hosts/paths/methods/status codes
-- Dashboard with **selectable time windows** (Last One Hour / Today / Yesterday / This Week / This Month / Last Week / Last Month): counts, status buckets, slowest endpoints, failed outgoing
+- Dashboard with **selectable time windows** (Last One Hour / Today / Yesterday / This Week / This Month / Last Week / Last Month): counts, incoming + outgoing status buckets, slowest endpoints, failed outgoing
+- Top navigation bar; list rows show relative + absolute (local & UTC) timestamps
 - UI assets served straight from `vendor/` — `composer update` ships new bundles, no `vendor:publish` follow-up
 
 ## Beacon vs Telescope
