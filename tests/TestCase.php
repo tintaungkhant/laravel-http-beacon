@@ -5,7 +5,9 @@ namespace HttpBeacon\Tests;
 use HttpBeacon\BeaconServiceProvider;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\Models\SharedLink;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -78,6 +80,21 @@ abstract class TestCase extends Orchestra
             'response' => null,
             'response_headers' => [],
             'failed' => false,
+            'created_at' => now(),
+        ], $overrides));
+    }
+
+    protected function makeShare(array $overrides = []): SharedLink
+    {
+        return SharedLink::create(array_merge([
+            'token' => Str::random(48),
+            'request_type' => 'incoming',
+            'request_id' => 1,
+            'password' => null,
+            'expires_at' => null,
+            'revoked_at' => null,
+            'view_count' => 0,
+            'last_viewed_at' => null,
             'created_at' => now(),
         ], $overrides));
     }

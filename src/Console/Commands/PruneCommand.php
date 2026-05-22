@@ -5,6 +5,7 @@ namespace HttpBeacon\Console\Commands;
 use Carbon\CarbonInterface;
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\Models\SharedLink;
 use Illuminate\Console\Command;
 
 class PruneCommand extends Command
@@ -43,7 +44,13 @@ class PruneCommand extends Command
         $incoming = $this->chunkDelete(IncomingRequest::class, $cutoff, $chunkSize);
         $outgoing = $this->chunkDelete(OutgoingRequest::class, $cutoff, $chunkSize);
 
+        $shares = SharedLink::query()
+            ->where(fn ($q) => $q->whereNotNull('revoked_at')
+                ->orWhere(fn ($q) => $q->whereNotNull('expires_at')->where('expires_at', '<', now())))
+            ->delete();
+
         $this->info("Pruned {$incoming} incoming and {$outgoing} outgoing entries.");
+        $this->info("Pruned {$shares} revoked/expired shared links.");
 
         return self::SUCCESS;
     }

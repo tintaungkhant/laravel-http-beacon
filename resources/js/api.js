@@ -61,4 +61,21 @@ export const api = {
         show: (id) => request(`/outgoing-requests/${id}`),
         clear: () => request('/outgoing-requests', { method: 'DELETE' }),
     },
+    shares: {
+        list: (params = {}) => request(listPath('shares', params)),
+        create: (body) => request('/shares', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        }),
+        revoke: (id) => request(`/shares/${id}`, { method: 'DELETE' }),
+    },
+    shared: {
+        show: (token) => request(`/shared/${token}`),
+        unlock: (token, password) => request(`/shared/${token}/unlock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+        }),
+    },
 }
