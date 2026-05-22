@@ -7,6 +7,7 @@ use HttpBeacon\Http\Controllers\OutgoingRequestController;
 use HttpBeacon\Http\Controllers\RecordingController;
 use HttpBeacon\Http\Controllers\ShareController;
 use HttpBeacon\Http\Controllers\SharedRequestController;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
 
 $sharingEnabled = (bool) config('beacon.sharing.enabled', true);
@@ -31,7 +32,8 @@ if ($sharingEnabled) {
         ->prefix('beacon')
         ->group(function () {
             Route::get('api/shared/{token}', [SharedRequestController::class, 'show']);
-            Route::post('api/shared/{token}/unlock', [SharedRequestController::class, 'unlock']);
+            Route::post('api/shared/{token}/unlock', [SharedRequestController::class, 'unlock'])
+                ->middleware(ThrottleRequests::class.':10,1'); // brute-force guard on password unlock
             Route::get('shared/{token}', fn () => view('beacon::layout'));
         });
 }

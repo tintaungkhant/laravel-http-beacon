@@ -104,6 +104,19 @@ class SharedRequestControllerTest extends TestCase
             ->assertJsonPath('data.unlocked', true);
     }
 
+    public function test_unlock_is_rate_limited(): void
+    {
+        $incoming = $this->makeIncoming();
+        $share = $this->makeShare(['request_id' => $incoming->id, 'password' => Hash::make('secret')]);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/beacon/api/shared/'.$share->token.'/unlock', ['password' => 'wrong']);
+        }
+
+        $this->postJson('/beacon/api/shared/'.$share->token.'/unlock', ['password' => 'wrong'])
+            ->assertStatus(429);
+    }
+
     public function test_unlocked_session_reveals_the_request(): void
     {
         $incoming = $this->makeIncoming();

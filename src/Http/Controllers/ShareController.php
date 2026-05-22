@@ -36,20 +36,23 @@ class ShareController extends Controller
         }
 
         return response()->json([
-            'data' => $query->get()->map(fn (SharedLink $s) => $this->present($s))->all(),
+            'data' => $query->limit(100)->get()->map(fn (SharedLink $s) => $this->present($s))->all(),
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
-        $type = (string) $request->input('request_type', '');
-        $id = (int) $request->input('request_id');
-        $expiry = (string) $request->input('expiry', 'never');
-        $password = $request->input('password');
+        $validated = $request->validate([
+            'request_type' => ['required', 'in:incoming,outgoing'],
+            'request_id' => ['required', 'integer'],
+            'expiry' => ['nullable', 'in:1h,24h,7d,30d,never'],
+            'password' => ['nullable', 'string'],
+        ]);
 
-        if (! in_array($type, ['incoming', 'outgoing'], true)) {
-            return response()->json(['message' => 'Invalid request type.'], 422);
-        }
+        $type = $validated['request_type'];
+        $id = (int) $validated['request_id'];
+        $expiry = $validated['expiry'] ?? 'never';
+        $password = $validated['password'] ?? null;
 
         $model = $type === 'incoming' ? IncomingRequest::class : OutgoingRequest::class;
 
@@ -61,7 +64,9 @@ class ShareController extends Controller
             'token' => Str::random(48),
             'request_type' => $type,
             'request_id' => $id,
-            'password' => filled($password) ? Hash::make((string) $password) : null,
+            'password' => is_string($password) && $password !== ''
+                ? Hash::make($password)
+                : null,
             'expires_at' => isset(self::EXPIRY_HOURS[$expiry])
                 ? now()->addHours(self::EXPIRY_HOURS[$expiry])
                 : null,

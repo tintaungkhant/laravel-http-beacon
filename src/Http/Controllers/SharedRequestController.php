@@ -46,10 +46,8 @@ class SharedRequestController extends Controller
             return $this->state('missing');
         }
 
-        $share->forceFill([
-            'view_count' => $share->view_count + 1,
-            'last_viewed_at' => now(),
-        ])->save();
+        // Atomic so concurrent views don't lose increments.
+        $share->increment('view_count', 1, ['last_viewed_at' => now()]);
 
         return response()->json([
             'data' => [
@@ -68,7 +66,13 @@ class SharedRequestController extends Controller
             return response()->json(['data' => ['unlocked' => false]], 404);
         }
 
-        if (! Hash::check((string) $request->input('password'), $share->password)) {
+        $password = $request->input('password');
+
+        if (! is_string($password) || $password === '') {
+            return response()->json(['data' => ['unlocked' => false]], 422);
+        }
+
+        if (! Hash::check($password, $share->password)) {
             return response()->json(['data' => ['unlocked' => false]], 422);
         }
 

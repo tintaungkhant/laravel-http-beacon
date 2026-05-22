@@ -4,6 +4,7 @@ namespace HttpBeacon\Tests\Feature;
 
 use HttpBeacon\Models\IncomingRequest;
 use HttpBeacon\Models\OutgoingRequest;
+use HttpBeacon\Models\SharedLink;
 use HttpBeacon\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -37,5 +38,20 @@ class PruneCommandTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame(2, IncomingRequest::query()->count());
+    }
+
+    public function test_prune_removes_revoked_and_expired_shared_links_keeps_active(): void
+    {
+        $incoming = $this->makeIncoming();
+
+        $active = $this->makeShare(['request_id' => $incoming->id]);
+        $revoked = $this->makeShare(['request_id' => $incoming->id, 'revoked_at' => now()]);
+        $expired = $this->makeShare(['request_id' => $incoming->id, 'expires_at' => now()->subHour()]);
+
+        $this->artisan('beacon:prune')->assertSuccessful();
+
+        $this->assertNotNull(SharedLink::query()->find($active->id));
+        $this->assertNull(SharedLink::query()->find($revoked->id));
+        $this->assertNull(SharedLink::query()->find($expired->id));
     }
 }

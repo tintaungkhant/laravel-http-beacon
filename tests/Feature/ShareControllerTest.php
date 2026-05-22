@@ -51,6 +51,32 @@ class ShareControllerTest extends TestCase
         $this->assertTrue(Hash::check('secret', $share->password));
     }
 
+    public function test_store_rejects_an_invalid_request_type(): void
+    {
+        $incoming = $this->makeIncoming();
+
+        $this->postJson('/beacon/api/shares', [
+            'request_type' => 'sideways',
+            'request_id' => $incoming->id,
+            'expiry' => 'never',
+        ])->assertStatus(422);
+
+        $this->assertSame(0, SharedLink::query()->count());
+    }
+
+    public function test_store_rejects_an_unknown_expiry_preset(): void
+    {
+        $incoming = $this->makeIncoming();
+
+        $this->postJson('/beacon/api/shares', [
+            'request_type' => 'incoming',
+            'request_id' => $incoming->id,
+            'expiry' => 'forever-and-ever',
+        ])->assertStatus(422);
+
+        $this->assertSame(0, SharedLink::query()->count());
+    }
+
     public function test_store_for_a_missing_request_returns_404(): void
     {
         $this->postJson('/beacon/api/shares', [
